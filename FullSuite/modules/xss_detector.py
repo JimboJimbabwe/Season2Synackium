@@ -815,4 +815,6 @@ if __name__ == "__main__":
     # Test the analyze function
     results = analyze(test_request, test_response, test_url)
     
-    #
+    #Print results
+    import json
+    print(json.dumps(results, indent=2))
