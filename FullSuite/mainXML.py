@@ -307,8 +307,8 @@ class CoreXMLParser:
     
     def run_selected_module(self):
         """Run the selected analysis module on the current item"""
-        if not self.modules or not self.current_item:
-            messagebox.showinfo("Module", "Please select a module and load an XML file first")
+        if not self.modules:
+            messagebox.showinfo("Module", "Please load an XML file first")
             return
             
         selected_indices = self.module_listbox.curselection()
@@ -328,15 +328,86 @@ class CoreXMLParser:
         if not module_obj:
             messagebox.showerror("Module Error", f"Module '{module_name}' not found")
             return
-            
-        # Prepare the data for the module
-        request_data = self.get_current_request_data()
-        response_data = self.get_current_response_data()
-        url = self.get_full_url()
         
         try:
-            # Run the module's analyze function
-            result = module_obj.analyze(request_data, response_data, url)
+            result = None
+            
+            # Check if this module supports scanning all requests
+            if hasattr(module_obj, "SCAN_ALL_REQUESTS") and module_obj.SCAN_ALL_REQUESTS:
+                # Show a progress dialog
+                progress = tk.Toplevel(self.root)
+                progress.title("Processing")
+                progress.geometry("300x100")
+                progress.transient(self.root)
+                progress.grab_set()
+                
+                ttk.Label(progress, text=f"Scanning all requests with {module_name}...").pack(pady=10)
+                progress_bar = ttk.Progressbar(progress, mode='indeterminate')
+                progress_bar.pack(fill=tk.X, padx=20)
+                progress_bar.start()
+                
+                # Force UI update
+                self.root.update_idletasks()
+                
+                # Get all items
+                all_items_data = []
+                for i, item in enumerate(self.items):
+                    url_elem = item.find('url')
+                    url = url_elem.text if url_elem is not None else ""
+                    
+                    request = item.find('request')
+                    if request is not None:
+                        request_content = request.text or ""
+                        if request.get('base64') == 'true':
+                            try:
+                                request_content = self.decode_base64(request_content)
+                            except:
+                                request_content = ""
+                        
+                        # Parse request data
+                        request_data = self.parse_request_content(request_content)
+                    else:
+                        request_data = {}
+                    
+                    response = item.find('response')
+                    if response is not None:
+                        response_content = response.text or ""
+                        if response.get('base64') == 'true':
+                            try:
+                                response_content = self.decode_base64(response_content)
+                            except:
+                                response_content = ""
+                        
+                        # Parse response data
+                        response_data = self.parse_response_content(response_content)
+                    else:
+                        response_data = {}
+                    
+                    all_items_data.append({
+                        "index": i,
+                        "url": url,
+                        "request_data": request_data,
+                        "response_data": response_data,
+                    })
+                
+                # Call the module's analyze_all function
+                result = module_obj.analyze_all(all_items_data)
+                
+                # Close progress dialog
+                progress.destroy()
+            else:
+                # Just analyze the current item as before
+                if not self.current_item:
+                    messagebox.showinfo("Module", "Please select a request to analyze")
+                    return
+                    
+                # Prepare the data for the module
+                request_data = self.get_current_request_data()
+                response_data = self.get_current_response_data()
+                url = self.get_full_url()
+                
+                # Run the module's analyze function
+                result = module_obj.analyze(request_data, response_data, url)
             
             # Display the result
             self.module_output_text.delete('1.0', tk.END)
@@ -354,7 +425,78 @@ class CoreXMLParser:
             
         except Exception as e:
             messagebox.showerror("Module Error", f"Error running module: {str(e)}")
-    
+            import traceback
+            traceback.print_exc()
+
+    def parse_request_content(self, request_content):
+        """Parse raw HTTP request into structured data"""
+        lines = request_content.splitlines()
+        
+        # Extract method, path, protocol
+        first_line = lines[0] if lines else ""
+        first_line_parts = first_line.split()
+        method = first_line_parts[0] if len(first_line_parts) > 0 else ""
+        path = first_line_parts[1] if len(first_line_parts) > 1 else ""
+        protocol = first_line_parts[2] if len(first_line_parts) > 2 else ""
+        
+        # Extract headers
+        headers = {}
+        i = 1
+        while i < len(lines) and lines[i].strip():
+            if ":" in lines[i]:
+                key, value = lines[i].split(":", 1)
+                headers[key.strip()] = value.strip()
+            i += 1
+            
+        # Extract body
+        body = ""
+        if i < len(lines):
+            body = "\n".join(lines[i+1:])
+            
+        return {
+            "method": method,
+            "path": path,
+            "protocol": protocol,
+            "headers": headers,
+            "body": body,
+            "raw": request_content
+        }
+
+    def parse_response_content(self, response_content):
+        """Parse raw HTTP response into structured data"""
+        lines = response_content.splitlines()
+        
+        # Extract status line
+        first_line = lines[0] if lines else ""
+        first_line_parts = first_line.split()
+        protocol = first_line_parts[0] if len(first_line_parts) > 0 else ""
+        status_code = first_line_parts[1] if len(first_line_parts) > 1 else ""
+        status_text = " ".join(first_line_parts[2:]) if len(first_line_parts) > 2 else ""
+        
+        # Extract headers
+        headers = {}
+        i = 1
+        while i < len(lines) and lines[i].strip():
+            if ":" in lines[i]:
+                key, value = lines[i].split(":", 1)
+                headers[key.strip()] = value.strip()
+            i += 1
+            
+        # Extract body
+        body = ""
+        if i < len(lines):
+            body = "\n".join(lines[i+1:])
+            
+        return {
+            "protocol": protocol,
+            "status_code": status_code,
+            "status_text": status_text,
+            "headers": headers,
+            "body": body,
+            "length": len(response_content),
+            "raw": response_content
+        }
+
     def configure_selected_module(self):
         """Configure the selected module"""
         selected_indices = self.module_listbox.curselection()
