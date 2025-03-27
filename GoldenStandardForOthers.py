@@ -1007,6 +1007,7 @@ if __name__ == "__main__":
     # Process the input and generate results
     if args.xml_file:
         # XML processing
+        print(f"Processing XML file: {args.xml_file}")
         xml_data = parse_xml_file(args.xml_file)
         if xml_data:
             results = process_xml_dataset(xml_data, args.base_url)
@@ -1015,6 +1016,7 @@ if __name__ == "__main__":
             exit(1)
     else:
         # Test data - use the same as before for backward compatibility
+        print("No XML file provided. Using default test data.")
         test_response = {
             "status_code": "200",
             "headers": {
@@ -1062,24 +1064,26 @@ if __name__ == "__main__":
         
         # Test the analyze function
         results = analyze({}, test_response, "https://example.com/index.php")
-        
-            # Export the results
-        if args.base_path and args.target and args.auth_mode and args.category and args.test_type:
-            # Use structured path
-            export_results(
-                results=results,
-                output_format=args.output_format,
-                output_file=args.output_file,
-                base_path=args.base_path,
-                target=args.target,
-                auth_mode=args.auth_mode,
-                category=args.category,
-                test_type=args.test_type
-            )
-        else:
-            # Use simple output
-            export_results(
-                results=results,
-                output_format=args.output_format,
-                output_file=args.output_file
-            )
+    
+    # Export the results - MOVED OUTSIDE of the if/else block to handle both cases
+    if args.base_path and args.target and args.auth_mode and args.category and args.test_type:
+        # Use structured path
+        print(f"Saving results using structured path: {args.base_path}/{args.target}/{args.auth_mode}/{args.category}/{args.test_type}/Results/")
+        export_results(
+            results=results,
+            output_format=args.output_format,
+            output_file=args.output_file,
+            base_path=args.base_path,
+            target=args.target,
+            auth_mode=args.auth_mode,
+            category=args.category,
+            test_type=args.test_type
+        )
+    else:
+        # Use simple output
+        print("Using simple output (no structured path provided)")
+        export_results(
+            results=results,
+            output_format=args.output_format,
+            output_file=args.output_file
+        )
