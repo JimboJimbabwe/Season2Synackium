@@ -211,31 +211,61 @@ def analyze_all(all_items_data):
         "request_count": len(all_items_data),
         "json_request_count": 0,
         "total_parameters": 0,
-        "requests_with_parameters": []
+        "requests_with_parameters": [],
+        "debug_info": []  # Add debug info to help troubleshoot issues
     }
     
     # Process all items
     for item_data in all_items_data:
         index = item_data["index"]
-        url = item_data["url"]
-        request_data = item_data["request_data"]
+        url = item_data.get("url", "Unknown URL")
+        request_data = item_data.get("request_data", {})
         
-        # Check if this is a JSON request
+        # Debug info for this request
+        request_debug = {
+            "index": index,
+            "url": url,
+            "has_content_type": False,
+            "content_type": None,
+            "is_json": False,
+            "has_body": False,
+            "body_length": 0,
+            "parse_attempt": False,
+            "parse_error": None
+        }
+        
+        # Check if this is a JSON request (more lenient check)
         is_json = False
         content_type = ""
         
-        if "headers" in request_data:
-            content_type = request_data["headers"].get("Content-Type", "")
-            is_json = 'json' in content_type.lower() or 'application/json' in content_type.lower()
+        # Extract Content-Type in a case-insensitive way
+        if "headers" in request_data and request_data["headers"]:
+            for header_name, header_value in request_data["headers"].items():
+                if header_name.lower() == "content-type":
+                    content_type = header_value
+                    request_debug["has_content_type"] = True
+                    request_debug["content_type"] = content_type
+                    # More lenient check for JSON content types
+                    is_json = 'json' in content_type.lower() or '+json' in content_type.lower()
+                    request_debug["is_json"] = is_json
+                    break
         
-        # Skip if not JSON
-        if not is_json or "body" not in request_data or not request_data["body"]:
+        # Check for body presence and non-emptiness
+        has_body = "body" in request_data and request_data["body"] and request_data["body"].strip()
+        request_debug["has_body"] = has_body
+        if has_body:
+            request_debug["body_length"] = len(request_data["body"])
+        
+        # Skip if not JSON or no body
+        if not is_json or not has_body:
+            results["debug_info"].append(request_debug)
             continue
             
         results["json_request_count"] += 1
         
-        # Try to parse JSON
+        # Try to parse JSON with better error handling
         try:
+            request_debug["parse_attempt"] = True
             json_data = json.loads(request_data["body"])
             
             # Extract parameters
@@ -266,9 +296,14 @@ def analyze_all(all_items_data):
                     
                     results["parameters"][param_name]["count"] += 1
                     results["parameters"][param_name]["requests"].append(index + 1)  # 1-based index
-        except json.JSONDecodeError:
-            # Not valid JSON, skip
-            continue
+        except json.JSONDecodeError as e:
+            # Capture JSON parse errors for debugging
+            request_debug["parse_error"] = str(e)
+        except Exception as e:
+            # Capture other unexpected errors
+            request_debug["parse_error"] = f"Unexpected error: {str(e)}"
+        
+        results["debug_info"].append(request_debug)
     
     return results
 
@@ -650,42 +685,56 @@ def format_results_as_text(results):
     text.append(f"Total Requests: {results.get('request_count', 0)}")
     text.append(f"JSON Requests: {results.get('json_request_count', 0)}")
     text.append(f"Total Parameters Found: {results.get('total_parameters', 0)}")
+    text.append(f"Unique Parameters: {len(results.get('parameters', {}))}")
     text.append("")
     
-    # Parameters
-    text.append("JSON PARAMETERS")
-    text.append("-" * 40)
-    for param_name, param_info in results.get("parameters", {}).items():
-        text.append(f"Parameter: {param_name}")
-        text.append(f"Type: {param_info.get('type', 'unknown')}")
-        text.append(f"Occurrences: {param_info.get('count', 0)}")
+    # Parameters section with detailed information
+    if results.get("parameters"):
+        text.append("PARAMETERS DETAILS")
+        text.append("-" * 40)
         
-        if param_info.get("example_value") is not None:
-            text.append(f"Example Value: {param_info.get('example_value')}")
+        for param_name, param_info in sorted(results.get("parameters", {}).items()):
+            text.append(f"Parameter: {param_name}")
+            text.append(f"Type: {param_info.get('type', 'unknown')}")
+            text.append(f"Occurrences: {param_info.get('count', 0)}")
             
-        # Show request indices
-        if param_info.get("requests"):
-            if len(param_info["requests"]) <= 5:
-                text.append(f"Found in Requests: {', '.join(map(str, param_info['requests']))}")
-            else:
-                text.append(f"Found in {len(param_info['requests'])} requests")
+            # Show requests where this parameter appears
+            if param_info.get("requests"):
+                request_list = ", ".join(map(str, param_info.get("requests", [])))
+                text.append(f"Found in Requests: {request_list}")
+            
+            # Show example value if available
+            if param_info.get("example_value") is not None:
+                text.append(f"Example Value: {param_info.get('example_value')}")
                 
-        text.append("")
+            text.append("")
     
-    # Requests with JSON parameters
+    # Detailed Request Information
     if results.get("requests_with_parameters"):
         text.append("REQUESTS WITH JSON PARAMETERS")
         text.append("-" * 40)
-        for i, request in enumerate(results["requests_with_parameters"]):
-            if i >= 10:  # Limit to 10 examples
-                text.append(f"... and {len(results['requests_with_parameters']) - 10} more requests")
-                break
-                
-            text.append(f"Request #{request.get('index', '?')} - {request.get('url', 'Unknown URL')}")
-            text.append(f"Method: {request.get('method', 'GET')}")
-            text.append(f"Content-Type: {request.get('content_type', 'Unknown')}")
-            text.append(f"Parameters: {len(request.get('parameters', []))}")
+        
+        for req_info in results["requests_with_parameters"]:
+            text.append(f"Request #{req_info.get('index', '?')}")
+            text.append(f"URL: {req_info.get('url', 'Unknown URL')}")
+            text.append(f"Method: {req_info.get('method', 'GET')}")
+            text.append(f"Content-Type: {req_info.get('content_type', 'Unknown')}")
+            text.append(f"Parameters: {len(req_info.get('parameters', []))}")
+            
+            # List all parameters in this request with full details
+            if req_info.get("parameters"):
+                text.append("Parameter Details:")
+                for param in req_info["parameters"]:
+                    param_text = f"  - {param.get('name', 'Unknown')} ({param.get('type', 'unknown')})"
+                    if "value" in param:
+                        param_text += f" = {param['value']}"
+                    text.append(param_text)
+            
             text.append("")
+    else:
+        text.append("NO JSON PARAMETERS FOUND")
+        text.append("-" * 40)
+        text.append("No JSON parameters were detected in any of the requests.")
     
     return "\n".join(text)
 
