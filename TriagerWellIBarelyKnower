@@ -1,0 +1,1300 @@
+#!/usr/bin/env python3
+import os
+import json
+import argparse
+import threading
+from pathlib import Path
+import tkinter as tk
+from tkinter import ttk, scrolledtext
+import customtkinter as ctk
+from PIL import Image, ImageTk
+
+# Set appearance mode and default color theme
+ctk.set_appearance_mode("System")  # Modes: "System" (standard), "Dark", "Light"
+ctk.set_default_color_theme("blue")  # Themes: "blue" (standard), "green", "dark-blue"
+
+# Base directory where all testing directories are located
+BASE_DIR = None
+
+def sanitize_directory_name(name):
+    """
+    Sanitize directory name to be compatible with display purposes.
+    
+    Args:
+        name (str): The directory name to sanitize
+    
+    Returns:
+        str: Sanitized directory name for display
+    """
+    # Use underscore as a replacement for forward/back slashes in display
+    return name.replace('_', ' ')
+
+def get_targets():
+    """
+    Get all target directories (subfolders) in the base directory.
+    
+    Returns:
+        list: List of target directory names
+    """
+    targets = []
+    for item in Path(BASE_DIR).iterdir():
+        if item.is_dir() and not item.name.startswith('.'):
+            targets.append(item.name)
+    return sorted(targets)
+
+def get_categories(target, section):
+    """
+    Get all categories in a target's section (Auth or raw).
+    
+    Args:
+        target (str): Target directory name
+        section (str): Section name (Auth or raw)
+        
+    Returns:
+        list: List of category directory names
+    """
+    categories = []
+    section_path = Path(BASE_DIR) / target / section
+    
+    if section_path.exists():
+        for item in section_path.iterdir():
+            if item.is_dir():
+                categories.append(item.name)
+    
+    return sorted(categories)
+
+def get_test_types(target, section, category):
+    """
+    Get all test types in a category.
+    
+    Args:
+        target (str): Target directory name
+        section (str): Section name (Auth or raw)
+        category (str): Category directory name
+        
+    Returns:
+        list: List of test type directory names
+    """
+    test_types = []
+    test_path = Path(BASE_DIR) / target / section / category
+    
+    if test_path.exists():
+        for item in test_path.iterdir():
+            if item.is_dir():
+                test_types.append(item.name)
+    
+    return sorted(test_types)
+
+def get_results_files(target, section, category, test_type):
+    """
+    Get all JSON files in a test type's results directory.
+    
+    Args:
+        target (str): Target directory name
+        section (str): Section name (Auth or raw)
+        category (str): Category directory name
+        test_type (str): Test type directory name
+        
+    Returns:
+        list: List of JSON file names
+    """
+    results_path = Path(BASE_DIR) / target / section / category / test_type / "results"
+    json_files = []
+    
+    if results_path.exists():
+        for item in results_path.glob("*.json"):
+            if item.is_file():
+                json_files.append(item.name)
+    
+    return sorted(json_files)
+
+def load_json_data(target, section, category, test_type, filename):
+    """
+    Load JSON data from a results file.
+    
+    Args:
+        target (str): Target directory name
+        section (str): Section name (Auth or raw)
+        category (str): Category directory name
+        test_type (str): Test type directory name
+        filename (str): JSON file name
+        
+    Returns:
+        dict: JSON data
+    """
+    file_path = Path(BASE_DIR) / target / section / category / test_type / "results" / filename
+    
+    if file_path.exists():
+        try:
+            with open(file_path, 'r') as f:
+                return json.load(f)
+        except Exception as e:
+            return {"error": f"Failed to load JSON: {str(e)}"}
+    
+    return {"error": "File not found"}
+
+# Placeholder functions for different test result processors
+def process_xpath_results(data):
+    """
+    Process XPATH test results.
+    
+    Args:
+        data (dict): JSON data
+        
+    Returns:
+        dict: Processed data for rendering
+    """
+    processed = {
+        "vulnerable_parameters": [],
+    }
+    
+    # Extract vulnerable parameters with risk levels
+    if "vulnerable_parameters" in data:
+        for param in data["vulnerable_parameters"]:
+            param_data = {
+                "name": param.get("name", "Unknown"),
+                "risk_level": param.get("risk_level", "Unknown"),
+                "risk_factors": param.get("risk_factors", []),
+                "requests": []
+            }
+            
+            # Get request counts
+            if "requests" in param:
+                param_data["requests"] = param["requests"]
+                param_data["request_count"] = len(param["requests"])
+            
+            processed["vulnerable_parameters"].append(param_data)
+    
+    return processed
+
+def process_url_parameters(data):
+    """
+    Process URL parameters test results.
+    
+    Args:
+        data (dict): JSON data
+        
+    Returns:
+        dict: Processed data for rendering
+    """
+    processed = {
+        "urls": []
+    }
+    
+    # Process each URL
+    if "urls" in data:
+        for idx, url_data in enumerate(data["urls"]):
+            url_info = {
+                "index": idx,
+                "url": url_data.get("url", "Unknown"),
+                "method": url_data.get("method", "GET"),
+                "parameter_count": len(url_data.get("parameters", [])),
+                "parameters": url_data.get("parameters", [])
+            }
+            processed["urls"].append(url_info)
+    
+    return processed
+
+def process_sql_results(data):
+    """
+    Process SQL injection test results.
+    
+    Args:
+        data (dict): JSON data
+        
+    Returns:
+        dict: Processed data for rendering
+    """
+    processed = {
+        "urls": []
+    }
+    
+    # Process each URL with vulnerable parameters
+    if "urls" in data:
+        for url_data in data["urls"]:
+            vuln_params = url_data.get("vulnerable_parameters", [])
+            url_info = {
+                "url": url_data.get("url", "Unknown"),
+                "method": url_data.get("method", "GET"),
+                "vuln_param_count": len(vuln_params),
+                "parameters": vuln_params
+            }
+            processed["urls"].append(url_info)
+    
+    return processed
+
+def process_sensitive_info(data):
+    """
+    Process sensitive information test results.
+    
+    Args:
+        data (dict): JSON data
+        
+    Returns:
+        dict: Processed data for rendering
+    """
+    processed = {
+        "urls": []
+    }
+    
+    # Process each URL with findings
+    if "urls" in data:
+        for url_data in data["urls"]:
+            url_info = {
+                "url": url_data.get("url", "Unknown"),
+                "findings": url_data.get("findings", [])
+            }
+            processed["urls"].append(url_info)
+    
+    return processed
+
+def process_path_finder(data):
+    """
+    Process path finder test results.
+    
+    Args:
+        data (dict): JSON data
+        
+    Returns:
+        dict: Processed data for rendering
+    """
+    processed = {
+        "urls": [],
+        "paths": data.get("paths", []),
+        "directories": data.get("directories", []),
+        "files": data.get("files", []),
+        "sensitive": data.get("potentially_sensitive", [])
+    }
+    
+    # Process URLs
+    if "urls" in data:
+        for url_data in data["urls"]:
+            processed["urls"].append({
+                "url": url_data.get("url", "Unknown")
+            })
+    
+    return processed
+
+def process_json_results(data):
+    """
+    Process JSON test results.
+    
+    Args:
+        data (dict): JSON data
+        
+    Returns:
+        dict: Processed data for rendering
+    """
+    processed = {
+        "requests": []
+    }
+    
+    # Process each request
+    if "requests" in data:
+        for req_data in data["requests"]:
+            req_info = {
+                "url": req_data.get("url", "Unknown"),
+                "method": req_data.get("method", "GET"),
+                "content_type": req_data.get("content_type", "Unknown"),
+                "parameters": req_data.get("parameters", [])
+            }
+            processed["requests"].append(req_info)
+    
+    return processed
+
+# Map test types to their processor functions
+TEST_PROCESSORS = {
+    "XPath_XQuery Injection": process_xpath_results,
+    "URL Parameters": process_url_parameters,
+    "SQL Injection": process_sql_results,
+    "Sensitive Information Leak to Third-Parties": process_sensitive_info,
+    "Sensitive Directory_File Contents Disclosed": process_sensitive_info,
+    "Path Traversal": process_path_finder,
+    "JSON Injection": process_json_results,
+    # Default fallback processor
+    "default": lambda data: data
+}
+
+def get_processor_for_test(test_type):
+    """
+    Get the appropriate processor function for a test type.
+    
+    Args:
+        test_type (str): Test type name
+        
+    Returns:
+        function: Processor function
+    """
+    return TEST_PROCESSORS.get(test_type, TEST_PROCESSORS["default"])
+
+class NavigatorApp:
+    def __init__(self, root, base_dir):
+        self.root = root
+        self.base_dir = base_dir
+        global BASE_DIR
+        BASE_DIR = base_dir
+        
+        self.root.title("Security Testing Directory Navigator")
+        self.root.geometry("1280x768")
+        
+        # State variables
+        self.current_target = None
+        self.current_section = None
+        self.current_category = None
+        self.current_test_type = None
+        self.current_result_file = None
+        self.raw_data = None
+        self.processed_data = None
+        
+        # Create main frame
+        self.main_frame = ctk.CTkFrame(self.root)
+        self.main_frame.pack(fill="both", expand=True, padx=10, pady=10)
+        
+        # Split the main frame into sidebar and content
+        self.create_sidebar()
+        self.create_content_area()
+        
+        # Initialize navigation state
+        self.initialize_navigation()
+        
+    def create_sidebar(self):
+        # Create a frame for the sidebar
+        self.sidebar_frame = ctk.CTkFrame(self.main_frame, width=250)
+        self.sidebar_frame.pack(side="left", fill="y", padx=5, pady=5)
+        
+        # Create label and treeview for navigation
+        sidebar_label = ctk.CTkLabel(self.sidebar_frame, text="Navigation", font=("Arial", 14, "bold"))
+        sidebar_label.pack(pady=10)
+        
+        # Create a frame for the treeview
+        tree_frame = ctk.CTkFrame(self.sidebar_frame)
+        tree_frame.pack(fill="both", expand=True, padx=5, pady=5)
+        
+        # Create Treeview for navigation
+        self.tree = ttk.Treeview(tree_frame, selectmode="browse")
+        self.tree.pack(fill="both", expand=True)
+        
+        # Configure Treeview style for better visibility in dark mode
+        style = ttk.Style()
+        style.configure("Treeview", background="#2b2b2b", foreground="white", fieldbackground="#2b2b2b")
+        style.configure("Treeview.Heading", background="#2b2b2b", foreground="white")
+        style.map('Treeview', background=[('selected', '#347ab3')])
+        
+        # Add a scrollbar to the treeview
+        tree_scrollbar = ctk.CTkScrollbar(tree_frame, command=self.tree.yview)
+        tree_scrollbar.pack(side="right", fill="y")
+        self.tree.configure(yscrollcommand=tree_scrollbar.set)
+        
+        # Bind selection event
+        self.tree.bind("<<TreeviewSelect>>", self.on_tree_select)
+    
+    def create_content_area(self):
+        # Create a frame for the content area
+        self.content_frame = ctk.CTkFrame(self.main_frame)
+        self.content_frame.pack(side="right", fill="both", expand=True, padx=5, pady=5)
+        
+        # Create breadcrumb frame
+        self.breadcrumb_frame = ctk.CTkFrame(self.content_frame)
+        self.breadcrumb_frame.pack(fill="x", padx=10, pady=10)
+        
+        self.breadcrumb_label = ctk.CTkLabel(self.breadcrumb_frame, text="Home", font=("Arial", 12))
+        self.breadcrumb_label.pack(side="left", padx=5)
+        
+        # Create a separator
+        separator = ttk.Separator(self.content_frame, orient="horizontal")
+        separator.pack(fill="x", padx=10, pady=5)
+        
+        # Create result area with tabs
+        self.tab_view = ctk.CTkTabview(self.content_frame)
+        self.tab_view.pack(fill="both", expand=True, padx=10, pady=10)
+        
+        # Create tabs
+        self.processed_tab = self.tab_view.add("Processed View")
+        self.raw_tab = self.tab_view.add("Raw JSON")
+        
+        # Create frames for each tab
+        self.processed_frame = ctk.CTkFrame(self.processed_tab)
+        self.processed_frame.pack(fill="both", expand=True, padx=10, pady=10)
+        
+        self.raw_frame = ctk.CTkFrame(self.raw_tab)
+        self.raw_frame.pack(fill="both", expand=True, padx=10, pady=10)
+        
+        # Add text area for raw JSON
+        self.raw_text = scrolledtext.ScrolledText(self.raw_frame, wrap=tk.WORD, bg="#2b2b2b", fg="white", font=("Courier", 10))
+        self.raw_text.pack(fill="both", expand=True, padx=5, pady=5)
+        
+        # Initialize processed view with scrollable frame
+        self.processed_scroll = ctk.CTkScrollableFrame(self.processed_frame)
+        self.processed_scroll.pack(fill="both", expand=True, padx=5, pady=5)
+        
+        # Welcome message
+        welcome_label = ctk.CTkLabel(self.processed_scroll, text="Select a target to get started", font=("Arial", 14, "bold"))
+        welcome_label.pack(pady=20)
+    
+    def initialize_navigation(self):
+        # Clear the treeview
+        for item in self.tree.get_children():
+            self.tree.delete(item)
+        
+        # Add targets
+        targets = get_targets()
+        for target in targets:
+            target_id = self.tree.insert("", "end", text=target, values=("target", target))
+            
+            # Add sections
+            for section in ["Auth", "raw"]:
+                section_id = self.tree.insert(target_id, "end", text=section, values=("section", section))
+    
+    def on_tree_select(self, event):
+        # Get selected item
+        selected_item = self.tree.focus()
+        if not selected_item:
+            return
+        
+        item_type, item_value = self.tree.item(selected_item, "values")
+        parent_item = self.tree.parent(selected_item)
+        
+        if item_type == "target":
+            self.current_target = item_value
+            self.current_section = None
+            self.current_category = None
+            self.current_test_type = None
+            self.current_result_file = None
+            
+            # Update breadcrumb
+            self.update_breadcrumb()
+            
+            # Clear the content area
+            self.clear_content()
+            
+            # Display message
+            label = ctk.CTkLabel(self.processed_scroll, text=f"Selected Target: {self.current_target}\nPlease select a section (Auth or raw)", font=("Arial", 14))
+            label.pack(pady=20)
+            
+        elif item_type == "section":
+            self.current_section = item_value
+            self.current_category = None
+            self.current_test_type = None
+            self.current_result_file = None
+            
+            # Get target from parent
+            parent_type, parent_value = self.tree.item(parent_item, "values")
+            if parent_type == "target":
+                self.current_target = parent_value
+            
+            # Update breadcrumb
+            self.update_breadcrumb()
+            
+            # Load categories
+            self.load_categories()
+            
+        elif item_type == "category":
+            self.current_category = item_value
+            self.current_test_type = None
+            self.current_result_file = None
+            
+            # Get section from parent
+            parent_type, parent_value = self.tree.item(parent_item, "values")
+            if parent_type == "section":
+                self.current_section = parent_value
+                
+                # Get target from parent's parent
+                grandparent = self.tree.parent(parent_item)
+                grandparent_type, grandparent_value = self.tree.item(grandparent, "values")
+                if grandparent_type == "target":
+                    self.current_target = grandparent_value
+            
+            # Update breadcrumb
+            self.update_breadcrumb()
+            
+            # Load test types
+            self.load_test_types()
+            
+        elif item_type == "test_type":
+            self.current_test_type = item_value
+            self.current_result_file = None
+            
+            # Get category from parent
+            parent_type, parent_value = self.tree.item(parent_item, "values")
+            if parent_type == "category":
+                self.current_category = parent_value
+                
+                # Get section from parent's parent
+                grandparent = self.tree.parent(parent_item)
+                grandparent_type, grandparent_value = self.tree.item(grandparent, "values")
+                if grandparent_type == "section":
+                    self.current_section = grandparent_value
+                    
+                    # Get target from parent's parent's parent
+                    great_grandparent = self.tree.parent(grandparent)
+                    great_grandparent_type, great_grandparent_value = self.tree.item(great_grandparent, "values")
+                    if great_grandparent_type == "target":
+                        self.current_target = great_grandparent_value
+            
+            # Update breadcrumb
+            self.update_breadcrumb()
+            
+            # Load result files
+            self.load_result_files()
+            
+        elif item_type == "result_file":
+            self.current_result_file = item_value
+            
+            # Get test_type from parent
+            parent_type, parent_value = self.tree.item(parent_item, "values")
+            if parent_type == "test_type":
+                self.current_test_type = parent_value
+                
+                # Get category from parent's parent
+                grandparent = self.tree.parent(parent_item)
+                grandparent_type, grandparent_value = self.tree.item(grandparent, "values")
+                if grandparent_type == "category":
+                    self.current_category = grandparent_value
+                    
+                    # Get section from parent's parent's parent
+                    great_grandparent = self.tree.parent(grandparent)
+                    great_grandparent_type, great_grandparent_value = self.tree.item(great_grandparent, "values")
+                    if great_grandparent_type == "section":
+                        self.current_section = great_grandparent_value
+                        
+                        # Get target from parent's parent's parent's parent
+                        great_great_grandparent = self.tree.parent(great_grandparent)
+                        great_great_grandparent_type, great_great_grandparent_value = self.tree.item(great_great_grandparent, "values")
+                        if great_great_grandparent_type == "target":
+                            self.current_target = great_great_grandparent_value
+            
+            # Update breadcrumb
+            self.update_breadcrumb()
+            
+            # Load and display result data
+            self.load_result_data()
+    
+    def update_breadcrumb(self):
+        breadcrumb_text = "Home"
+        
+        if self.current_target:
+            breadcrumb_text += f" > {self.current_target}"
+            
+        if self.current_section:
+            breadcrumb_text += f" > {self.current_section}"
+            
+        if self.current_category:
+            breadcrumb_text += f" > {sanitize_directory_name(self.current_category)}"
+            
+        if self.current_test_type:
+            breadcrumb_text += f" > {sanitize_directory_name(self.current_test_type)}"
+            
+        if self.current_result_file:
+            breadcrumb_text += f" > {self.current_result_file}"
+        
+        self.breadcrumb_label.configure(text=breadcrumb_text)
+    
+    def clear_content(self):
+        # Clear processed view
+        for widget in self.processed_scroll.winfo_children():
+            widget.destroy()
+        
+        # Clear raw JSON view
+        self.raw_text.delete(1.0, tk.END)
+    
+    def load_categories(self):
+        # Clear any existing children
+        for child in self.tree.get_children(self.tree.focus()):
+            self.tree.delete(child)
+            
+        # Get categories
+        categories = get_categories(self.current_target, self.current_section)
+        
+        # Add categories to tree
+        for category in categories:
+            self.tree.insert(self.tree.focus(), "end", text=sanitize_directory_name(category), values=("category", category))
+        
+        # Update content area
+        self.clear_content()
+        
+        # Display message
+        label = ctk.CTkLabel(self.processed_scroll, text=f"Selected Section: {self.current_section}\nPlease select a category", font=("Arial", 14))
+        label.pack(pady=20)
+        
+        # Create a listbox for categories
+        category_frame = ctk.CTkFrame(self.processed_scroll)
+        category_frame.pack(fill="x", pady=10, padx=10)
+        
+        category_label = ctk.CTkLabel(category_frame, text="Available Categories:", font=("Arial", 12, "bold"))
+        category_label.pack(anchor="w", pady=5)
+        
+        for category in categories:
+            category_button = ctk.CTkButton(
+                category_frame, 
+                text=sanitize_directory_name(category), 
+                command=lambda cat=category: self.select_category_from_button(cat)
+            )
+            category_button.pack(fill="x", pady=2)
+    
+    def select_category_from_button(self, category):
+        # Find the category item in the tree
+        parent_item = self.tree.focus()
+        for child in self.tree.get_children(parent_item):
+            if self.tree.item(child, "values")[1] == category:
+                self.tree.focus(child)
+                self.tree.selection_set(child)
+                self.on_tree_select(None)
+                break
+    
+    def load_test_types(self):
+        # Clear any existing children
+        for child in self.tree.get_children(self.tree.focus()):
+            self.tree.delete(child)
+            
+        # Get test types
+        test_types = get_test_types(self.current_target, self.current_section, self.current_category)
+        
+        # Add test types to tree
+        for test_type in test_types:
+            self.tree.insert(self.tree.focus(), "end", text=sanitize_directory_name(test_type), values=("test_type", test_type))
+        
+        # Update content area
+        self.clear_content()
+        
+        # Display message
+        label = ctk.CTkLabel(self.processed_scroll, text=f"Selected Category: {sanitize_directory_name(self.current_category)}\nPlease select a test type", font=("Arial", 14))
+        label.pack(pady=20)
+        
+        # Create a frame for test types
+        test_frame = ctk.CTkFrame(self.processed_scroll)
+        test_frame.pack(fill="x", pady=10, padx=10)
+        
+        test_label = ctk.CTkLabel(test_frame, text="Available Test Types:", font=("Arial", 12, "bold"))
+        test_label.pack(anchor="w", pady=5)
+        
+        for test_type in test_types:
+            test_button = ctk.CTkButton(
+                test_frame, 
+                text=sanitize_directory_name(test_type), 
+                command=lambda tt=test_type: self.select_test_type_from_button(tt)
+            )
+            test_button.pack(fill="x", pady=2)
+    
+    def select_test_type_from_button(self, test_type):
+        # Find the test type item in the tree
+        parent_item = self.tree.focus()
+        for child in self.tree.get_children(parent_item):
+            if self.tree.item(child, "values")[1] == test_type:
+                self.tree.focus(child)
+                self.tree.selection_set(child)
+                self.on_tree_select(None)
+                break
+    
+    def load_result_files(self):
+        # Clear any existing children
+        for child in self.tree.get_children(self.tree.focus()):
+            self.tree.delete(child)
+            
+        # Get result files
+        result_files = get_results_files(self.current_target, self.current_section, self.current_category, self.current_test_type)
+        
+        # Add result files to tree
+        for result_file in result_files:
+            self.tree.insert(self.tree.focus(), "end", text=result_file, values=("result_file", result_file))
+        
+        # Update content area
+        self.clear_content()
+        
+        # Display message
+        label = ctk.CTkLabel(self.processed_scroll, text=f"Selected Test Type: {sanitize_directory_name(self.current_test_type)}\nPlease select a result file", font=("Arial", 14))
+        label.pack(pady=20)
+        
+        # Create a frame for result files
+        result_frame = ctk.CTkFrame(self.processed_scroll)
+        result_frame.pack(fill="x", pady=10, padx=10)
+        
+        if not result_files:
+            no_files_label = ctk.CTkLabel(result_frame, text="No result files found", font=("Arial", 12))
+            no_files_label.pack(pady=10)
+        else:
+            files_label = ctk.CTkLabel(result_frame, text="Available Result Files:", font=("Arial", 12, "bold"))
+            files_label.pack(anchor="w", pady=5)
+            
+            for result_file in result_files:
+                file_button = ctk.CTkButton(
+                    result_frame, 
+                    text=result_file, 
+                    command=lambda rf=result_file: self.select_result_file_from_button(rf)
+                )
+                file_button.pack(fill="x", pady=2)
+    
+    def select_result_file_from_button(self, result_file):
+        # Find the result file item in the tree
+        parent_item = self.tree.focus()
+        for child in self.tree.get_children(parent_item):
+            if self.tree.item(child, "values")[1] == result_file:
+                self.tree.focus(child)
+                self.tree.selection_set(child)
+                self.on_tree_select(None)
+                break
+    
+    def load_result_data(self):
+        # Load the JSON data
+        self.clear_content()
+        
+        # Display loading message
+        loading_label = ctk.CTkLabel(self.processed_scroll, text="Loading result data...", font=("Arial", 14))
+        loading_label.pack(pady=20)
+        
+        # Use threading to prevent UI freeze during loading
+        threading.Thread(target=self.load_and_process_data).start()
+    
+    def load_and_process_data(self):
+        try:
+            # Load the JSON data
+            self.raw_data = load_json_data(
+                self.current_target, 
+                self.current_section, 
+                self.current_category, 
+                self.current_test_type, 
+                self.current_result_file
+            )
+            
+            # Process the data
+            processor = get_processor_for_test(self.current_test_type)
+            self.processed_data = processor(self.raw_data)
+            
+            # Update UI on the main thread
+            self.root.after(0, self.update_result_display)
+        except Exception as e:
+            # Update UI on the main thread
+            self.root.after(0, lambda: self.display_error(str(e)))
+    
+    def display_error(self, error_message):
+        self.clear_content()
+        error_label = ctk.CTkLabel(self.processed_scroll, text=f"Error: {error_message}", font=("Arial", 14), text_color="red")
+        error_label.pack(pady=20)
+    
+    
+    def update_result_display(self):
+        # Clear the content
+        self.clear_content()
+        
+        # Update raw JSON view
+        self.raw_text.insert(tk.END, json.dumps(self.raw_data, indent=2))
+        
+        # If error in raw data
+        if "error" in self.raw_data:
+            error_label = ctk.CTkLabel(self.processed_scroll, text=f"Error: {self.raw_data['error']}", font=("Arial", 14), text_color="red")
+            error_label.pack(pady=20)
+            return
+        
+        # Update processed view based on test type
+        if self.current_test_type.replace('_', ' ').lower().find("xpath") >= 0 or self.current_test_type.replace('_', ' ').lower().find("xquery") >= 0:
+            self.render_xpath_results()
+        elif self.current_test_type == "URL Parameters":
+            self.render_url_parameters_results()
+        elif self.current_test_type == "SQL Injection":
+            self.render_sql_results()
+        elif self.current_test_type.replace('_', ' ').lower().find("sensitive") >= 0:
+            self.render_sensitive_info_results()
+        elif self.current_test_type == "Path Traversal":
+            self.render_path_finder_results()
+        elif self.current_test_type == "JSON Injection":
+            self.render_json_results()
+        else:
+            # Default renderer
+            self.render_default_results()
+    
+    def render_xpath_results(self):
+        # Create header
+        header_label = ctk.CTkLabel(self.processed_scroll, text="XPath/XQuery Injection Results", font=("Arial", 16, "bold"))
+        header_label.pack(pady=10)
+        
+        # Check if there are any vulnerable parameters
+        if not self.processed_data.get("vulnerable_parameters") or len(self.processed_data["vulnerable_parameters"]) == 0:
+            no_data_label = ctk.CTkLabel(self.processed_scroll, text="No vulnerable parameters found.", font=("Arial", 12))
+            no_data_label.pack(pady=10)
+            return
+        
+        # Display each vulnerable parameter
+        for param in self.processed_data["vulnerable_parameters"]:
+            # Create a frame for this parameter
+            param_frame = ctk.CTkFrame(self.processed_scroll)
+            param_frame.pack(fill="x", pady=5, padx=10)
+            
+            # Risk level colors
+            risk_color = "#339900"  # Low (green)
+            if param.get("risk_level") == "High":
+                risk_color = "#cc0000"  # High (red)
+            elif param.get("risk_level") == "Medium":
+                risk_color = "#ff9900"  # Medium (orange)
+            
+            # Parameter header
+            header_frame = ctk.CTkFrame(param_frame, fg_color="#2b2b2b")
+            header_frame.pack(fill="x", pady=0)
+            
+            param_name_label = ctk.CTkLabel(header_frame, text=param.get("name", "Unknown"), font=("Arial", 12, "bold"))
+            param_name_label.pack(side="left", padx=10, pady=5)
+            
+            risk_label = ctk.CTkLabel(header_frame, text=f"Risk: {param.get('risk_level', 'Unknown')}", 
+                                    font=("Arial", 12, "bold"), text_color=risk_color)
+            risk_label.pack(side="right", padx=10, pady=5)
+            
+            # Create details frame that starts collapsed
+            details_frame = ctk.CTkFrame(param_frame)
+            details_frame.pack(fill="x", pady=5, padx=10)
+            details_frame.pack_forget()  # Initially hidden
+            
+            # Toggle button
+            def toggle_details(f=details_frame, b=None):
+                if f.winfo_ismapped():
+                    f.pack_forget()
+                    if b:
+                        b.configure(text="Show Details")
+                else:
+                    f.pack(fill="x", pady=5, padx=10)
+                    if b:
+                        b.configure(text="Hide Details")
+            
+            toggle_button = ctk.CTkButton(param_frame, text="Show Details", command=lambda f=details_frame, b=toggle_button: toggle_details(f, b))
+            toggle_button.pack(anchor="w", pady=5, padx=10)
+            
+            # Risk factors section
+            if param.get("risk_factors"):
+                risk_factors_label = ctk.CTkLabel(details_frame, text="Risk Factors:", font=("Arial", 12, "bold"))
+                risk_factors_label.pack(anchor="w", pady=5)
+                
+                for factor in param.get("risk_factors", []):
+                    factor_label = ctk.CTkLabel(details_frame, text=f"• {factor}", font=("Arial", 12))
+                    factor_label.pack(anchor="w", padx=10)
+            
+            # Requests section
+            if param.get("requests"):
+                requests_label = ctk.CTkLabel(details_frame, text=f"Found in {len(param.get('requests', []))} Requests:", 
+                                            font=("Arial", 12, "bold"))
+                requests_label.pack(anchor="w", pady=5)
+                
+                requests_frame = ctk.CTkScrollableFrame(details_frame, height=150)
+                requests_frame.pack(fill="x", pady=5)
+                
+                for req in param.get("requests", []):
+                    req_label = ctk.CTkLabel(requests_frame, text=f"• {req}", font=("Arial", 12))
+                    req_label.pack(anchor="w", padx=10)
+    
+    def render_url_parameters_results(self):
+        # Create header
+        header_label = ctk.CTkLabel(self.processed_scroll, text="URL Parameters Results", font=("Arial", 16, "bold"))
+        header_label.pack(pady=10)
+        
+        # Check if there are any URLs
+        if not self.processed_data.get("urls") or len(self.processed_data["urls"]) == 0:
+            no_data_label = ctk.CTkLabel(self.processed_scroll, text="No URLs found.", font=("Arial", 12))
+            no_data_label.pack(pady=10)
+            return
+        
+        # Display each URL
+        for url_data in self.processed_data["urls"]:
+            # Create a frame for this URL
+            url_frame = ctk.CTkFrame(self.processed_scroll)
+            url_frame.pack(fill="x", pady=5, padx=10)
+            
+            # URL header
+            header_frame = ctk.CTkFrame(url_frame, fg_color="#2b2b2b")
+            header_frame.pack(fill="x", pady=0)
+            
+            url_label = ctk.CTkLabel(header_frame, text=url_data.get("url", "Unknown"), font=("Arial", 12, "bold"),
+                                   wraplength=600, justify="left")
+            url_label.pack(side="left", padx=10, pady=5)
+            
+            method_label = ctk.CTkLabel(header_frame, text=f"{url_data.get('method', 'GET')} - {url_data.get('parameter_count', 0)} params", 
+                                      font=("Arial", 12))
+            method_label.pack(side="right", padx=10, pady=5)
+            
+            # Create details frame that starts collapsed
+            details_frame = ctk.CTkFrame(url_frame)
+            details_frame.pack(fill="x", pady=5, padx=10)
+            details_frame.pack_forget()  # Initially hidden
+            
+            # Toggle button
+            def toggle_details(f=details_frame, b=None):
+                if f.winfo_ismapped():
+                    f.pack_forget()
+                    if b:
+                        b.configure(text="Show Parameters")
+                else:
+                    f.pack(fill="x", pady=5, padx=10)
+                    if b:
+                        b.configure(text="Hide Parameters")
+            
+            toggle_button = ctk.CTkButton(url_frame, text="Show Parameters", command=lambda f=details_frame, b=toggle_button: toggle_details(f, b))
+            toggle_button.pack(anchor="w", pady=5, padx=10)
+            
+            # Index info
+            index_label = ctk.CTkLabel(details_frame, text=f"Index: {url_data.get('index', 'Unknown')}", font=("Arial", 12))
+            index_label.pack(anchor="w", pady=5)
+            
+            # Parameters section
+            if url_data.get("parameters"):
+                params_label = ctk.CTkLabel(details_frame, text="Parameters:", font=("Arial", 12, "bold"))
+                params_label.pack(anchor="w", pady=5)
+                
+                # Create table frame for parameters
+                table_frame = ctk.CTkFrame(details_frame)
+                table_frame.pack(fill="x", pady=5)
+                
+                # Table headers
+                header_frame = ctk.CTkFrame(table_frame, fg_color="#1f538d")
+                header_frame.pack(fill="x", pady=0)
+                
+                name_header = ctk.CTkLabel(header_frame, text="Name", font=("Arial", 12, "bold"), width=150)
+                name_header.pack(side="left", padx=5, pady=5)
+                
+                value_header = ctk.CTkLabel(header_frame, text="Value", font=("Arial", 12, "bold"), width=400)
+                value_header.pack(side="left", padx=5, pady=5)
+                
+                # Table rows
+                for param in url_data.get("parameters", []):
+                    row_frame = ctk.CTkFrame(table_frame)
+                    row_frame.pack(fill="x", pady=2)
+                    
+                    name_cell = ctk.CTkLabel(row_frame, text=param.get("name", "Unknown"), width=150, 
+                                          anchor="w", wraplength=140)
+                    name_cell.pack(side="left", padx=5, pady=2)
+                    
+                    value_cell = ctk.CTkLabel(row_frame, text=param.get("value", ""), width=400, 
+                                           anchor="w", wraplength=390)
+                    value_cell.pack(side="left", padx=5, pady=2)
+    
+    def render_sql_results(self):
+        # Create header
+        header_label = ctk.CTkLabel(self.processed_scroll, text="SQL Injection Results", font=("Arial", 16, "bold"))
+        header_label.pack(pady=10)
+        
+        # Check if there are any URLs
+        if not self.processed_data.get("urls") or len(self.processed_data["urls"]) == 0:
+            no_data_label = ctk.CTkLabel(self.processed_scroll, text="No vulnerable URLs found.", font=("Arial", 12))
+            no_data_label.pack(pady=10)
+            return
+        
+        # Display each URL
+        for url_data in self.processed_data["urls"]:
+            # Create a frame for this URL
+            url_frame = ctk.CTkFrame(self.processed_scroll)
+            url_frame.pack(fill="x", pady=5, padx=10)
+            
+            # URL header
+            header_frame = ctk.CTkFrame(url_frame, fg_color="#2b2b2b")
+            header_frame.pack(fill="x", pady=0)
+            
+            url_label = ctk.CTkLabel(header_frame, text=url_data.get("url", "Unknown"), font=("Arial", 12, "bold"),
+                                   wraplength=600, justify="left")
+            url_label.pack(side="left", padx=10, pady=5)
+            
+            vuln_label = ctk.CTkLabel(header_frame, text=f"{url_data.get('method', 'GET')} - {url_data.get('vuln_param_count', 0)} vulnerable params", 
+                                    font=("Arial", 12), text_color="#ff6666")
+            vuln_label.pack(side="right", padx=10, pady=5)
+            
+            # Create details frame that starts collapsed
+            details_frame = ctk.CTkFrame(url_frame)
+            details_frame.pack(fill="x", pady=5, padx=10)
+            details_frame.pack_forget()  # Initially hidden
+            
+            # Toggle button
+            def toggle_details(f=details_frame, b=None):
+                if f.winfo_ismapped():
+                    f.pack_forget()
+                    if b:
+                        b.configure(text="Show Vulnerable Parameters")
+                else:
+                    f.pack(fill="x", pady=5, padx=10)
+                    if b:
+                        b.configure(text="Hide Vulnerable Parameters")
+            
+            toggle_button = ctk.CTkButton(url_frame, text="Show Vulnerable Parameters", 
+                                       command=lambda f=details_frame, b=toggle_button: toggle_details(f, b))
+            toggle_button.pack(anchor="w", pady=5, padx=10)
+            
+            # Parameters section
+            if url_data.get("parameters"):
+                # Create table frame for parameters
+                table_frame = ctk.CTkFrame(details_frame)
+                table_frame.pack(fill="x", pady=5)
+                
+                # Table headers
+                header_frame = ctk.CTkFrame(table_frame, fg_color="#1f538d")
+                header_frame.pack(fill="x", pady=0)
+                
+                name_header = ctk.CTkLabel(header_frame, text="Name", font=("Arial", 12, "bold"), width=120)
+                name_header.pack(side="left", padx=5, pady=5)
+                
+                value_header = ctk.CTkLabel(header_frame, text="Value", font=("Arial", 12, "bold"), width=200)
+                value_header.pack(side="left", padx=5, pady=5)
+                
+                vuln_header = ctk.CTkLabel(header_frame, text="Vulnerability", font=("Arial", 12, "bold"), width=200)
+                vuln_header.pack(side="left", padx=5, pady=5)
+                
+                # Table rows
+                for param in url_data.get("parameters", []):
+                    row_frame = ctk.CTkFrame(table_frame)
+                    row_frame.pack(fill="x", pady=2)
+                    
+                    name_cell = ctk.CTkLabel(row_frame, text=param.get("name", "Unknown"), width=120, 
+                                          anchor="w", wraplength=110)
+                    name_cell.pack(side="left", padx=5, pady=2)
+                    
+                    value_cell = ctk.CTkLabel(row_frame, text=param.get("value", ""), width=200, 
+                                           anchor="w", wraplength=190)
+                    value_cell.pack(side="left", padx=5, pady=2)
+                    
+                    vuln_cell = ctk.CTkLabel(row_frame, text=param.get("vulnerability", "Unknown"), width=200, 
+                                          anchor="w", wraplength=190, text_color="#ff6666")
+                    vuln_cell.pack(side="left", padx=5, pady=2)
+    
+    def render_sensitive_info_results(self):
+        # Create header
+        header_label = ctk.CTkLabel(self.processed_scroll, text="Sensitive Information Results", font=("Arial", 16, "bold"))
+        header_label.pack(pady=10)
+        
+        # Check if there are any URLs
+        if not self.processed_data.get("urls") or len(self.processed_data["urls"]) == 0:
+            no_data_label = ctk.CTkLabel(self.processed_scroll, text="No URLs with sensitive information found.", font=("Arial", 12))
+            no_data_label.pack(pady=10)
+            return
+        
+        # Display each URL
+        for url_data in self.processed_data["urls"]:
+            # Create a frame for this URL
+            url_frame = ctk.CTkFrame(self.processed_scroll)
+            url_frame.pack(fill="x", pady=5, padx=10)
+            
+            # URL header
+            header_frame = ctk.CTkFrame(url_frame, fg_color="#2b2b2b")
+            header_frame.pack(fill="x", pady=0)
+            
+            url_label = ctk.CTkLabel(header_frame, text=url_data.get("url", "Unknown"), font=("Arial", 12, "bold"),
+                                   wraplength=600, justify="left")
+            url_label.pack(padx=10, pady=5)
+            
+            # Create details frame that starts collapsed
+            details_frame = ctk.CTkFrame(url_frame)
+            details_frame.pack(fill="x", pady=5, padx=10)
+            details_frame.pack_forget()  # Initially hidden
+            
+            # Toggle button
+            def toggle_details(f=details_frame, b=None):
+                if f.winfo_ismapped():
+                    f.pack_forget()
+                    if b:
+                        b.configure(text="Show Findings")
+                else:
+                    f.pack(fill="x", pady=5, padx=10)
+                    if b:
+                        b.configure(text="Hide Findings")
+            
+            toggle_button = ctk.CTkButton(url_frame, text="Show Findings", 
+                                       command=lambda f=details_frame, b=toggle_button: toggle_details(f, b))
+            toggle_button.pack(anchor="w", pady=5, padx=10)
+            
+            # Findings section
+            if url_data.get("findings"):
+                findings_label = ctk.CTkLabel(details_frame, text="Findings:", font=("Arial", 12, "bold"))
+                findings_label.pack(anchor="w", pady=5)
+                
+                for finding in url_data.get("findings", []):
+                    finding_frame = ctk.CTkFrame(details_frame)
+                    finding_frame.pack(fill="x", pady=2)
+                    
+                    finding_label = ctk.CTkLabel(finding_frame, text=f"• {finding}", font=("Arial", 12),
+                                             wraplength=600, justify="left")
+                    finding_label.pack(anchor="w", padx=10, pady=2)
+    
+    def render_path_finder_results(self):
+        # Create header
+        header_label = ctk.CTkLabel(self.processed_scroll, text="Path Finder Results", font=("Arial", 16, "bold"))
+        header_label.pack(pady=10)
+        
+        # Create tabs for different path types
+        path_tab_view = ctk.CTkTabview(self.processed_scroll)
+        path_tab_view.pack(fill="x", pady=10, padx=10)
+        
+        # Create tabs
+        urls_tab = path_tab_view.add("URLs")
+        paths_tab = path_tab_view.add("Paths")
+        dirs_tab = path_tab_view.add("Directories")
+        files_tab = path_tab_view.add("Files")
+        sensitive_tab = path_tab_view.add("Sensitive")
+        
+        # URLs tab
+        urls_frame = ctk.CTkScrollableFrame(urls_tab, height=300)
+        urls_frame.pack(fill="both", expand=True, padx=5, pady=5)
+        
+        if not self.processed_data.get("urls") or len(self.processed_data["urls"]) == 0:
+            no_urls_label = ctk.CTkLabel(urls_frame, text="No URLs found.", font=("Arial", 12))
+            no_urls_label.pack(pady=10)
+        else:
+            for url in self.processed_data.get("urls", []):
+                url_label = ctk.CTkLabel(urls_frame, text=url.get("url", "Unknown"), font=("Arial", 12),
+                                      wraplength=600, justify="left")
+                url_label.pack(anchor="w", pady=2)
+        
+        # Paths tab
+        paths_frame = ctk.CTkScrollableFrame(paths_tab, height=300)
+        paths_frame.pack(fill="both", expand=True, padx=5, pady=5)
+        
+        if not self.processed_data.get("paths") or len(self.processed_data["paths"]) == 0:
+            no_paths_label = ctk.CTkLabel(paths_frame, text="No paths found.", font=("Arial", 12))
+            no_paths_label.pack(pady=10)
+        else:
+            for path in self.processed_data.get("paths", []):
+                path_label = ctk.CTkLabel(paths_frame, text=path, font=("Arial", 12),
+                                       wraplength=600, justify="left")
+                path_label.pack(anchor="w", pady=2)
+        
+        # Directories tab
+        dirs_frame = ctk.CTkScrollableFrame(dirs_tab, height=300)
+        dirs_frame.pack(fill="both", expand=True, padx=5, pady=5)
+        
+        if not self.processed_data.get("directories") or len(self.processed_data["directories"]) == 0:
+            no_dirs_label = ctk.CTkLabel(dirs_frame, text="No directories found.", font=("Arial", 12))
+            no_dirs_label.pack(pady=10)
+        else:
+            for directory in self.processed_data.get("directories", []):
+                dir_label = ctk.CTkLabel(dirs_frame, text=directory, font=("Arial", 12),
+                                      wraplength=600, justify="left")
+                dir_label.pack(anchor="w", pady=2)
+        
+        # Files tab
+        files_frame = ctk.CTkScrollableFrame(files_tab, height=300)
+        files_frame.pack(fill="both", expand=True, padx=5, pady=5)
+        
+        if not self.processed_data.get("files") or len(self.processed_data["files"]) == 0:
+            no_files_label = ctk.CTkLabel(files_frame, text="No files found.", font=("Arial", 12))
+            no_files_label.pack(pady=10)
+        else:
+            for file in self.processed_data.get("files", []):
+                file_label = ctk.CTkLabel(files_frame, text=file, font=("Arial", 12),
+                                       wraplength=600, justify="left")
+                file_label.pack(anchor="w", pady=2)
+        
+        # Sensitive tab
+        sensitive_frame = ctk.CTkScrollableFrame(sensitive_tab, height=300)
+        sensitive_frame.pack(fill="both", expand=True, padx=5, pady=5)
+        
+        if not self.processed_data.get("sensitive") or len(self.processed_data["sensitive"]) == 0:
+            no_sensitive_label = ctk.CTkLabel(sensitive_frame, text="No potentially sensitive items found.", font=("Arial", 12))
+            no_sensitive_label.pack(pady=10)
+        else:
+            for item in self.processed_data.get("sensitive", []):
+                item_label = ctk.CTkLabel(sensitive_frame, text=item, font=("Arial", 12),
+                                      wraplength=600, justify="left", text_color="#ff6666")
+                item_label.pack(anchor="w", pady=2)
+    
+    def render_json_results(self):
+        # Create header
+        header_label = ctk.CTkLabel(self.processed_scroll, text="JSON Injection Results", font=("Arial", 16, "bold"))
+        header_label.pack(pady=10)
+        
+        # Check if there are any requests
+        if not self.processed_data.get("requests") or len(self.processed_data["requests"]) == 0:
+            no_data_label = ctk.CTkLabel(self.processed_scroll, text="No requests found.", font=("Arial", 12))
+            no_data_label.pack(pady=10)
+            return
+        
+        # Display each request
+        for req_data in self.processed_data["requests"]:
+            # Create a frame for this request
+            req_frame = ctk.CTkFrame(self.processed_scroll)
+            req_frame.pack(fill="x", pady=5, padx=10)
+            
+            # Request header
+            header_frame = ctk.CTkFrame(req_frame, fg_color="#2b2b2b")
+            header_frame.pack(fill="x", pady=0)
+            
+            url_label = ctk.CTkLabel(header_frame, text=req_data.get("url", "Unknown"), font=("Arial", 12, "bold"),
+                                   wraplength=500, justify="left")
+            url_label.pack(side="left", padx=10, pady=5)
+            
+            method_label = ctk.CTkLabel(header_frame, text=f"{req_data.get('method', 'GET')} - {req_data.get('content_type', 'Unknown')}", 
+                                      font=("Arial", 12))
+            method_label.pack(side="right", padx=10, pady=5)
+            
+            # Create details frame that starts collapsed
+            details_frame = ctk.CTkFrame(req_frame)
+            details_frame.pack(fill="x", pady=5, padx=10)
+            details_frame.pack_forget()  # Initially hidden
+            
+            # Toggle button
+            def toggle_details(f=details_frame, b=None):
+                if f.winfo_ismapped():
+                    f.pack_forget()
+                    if b:
+                        b.configure(text="Show Parameters")
+                else:
+                    f.pack(fill="x", pady=5, padx=10)
+                    if b:
+                        b.configure(text="Hide Parameters")
+            
+            toggle_button = ctk.CTkButton(req_frame, text="Show Parameters", 
+                                       command=lambda f=details_frame, b=toggle_button: toggle_details(f, b))
+            toggle_button.pack(anchor="w", pady=5, padx=10)
+            
+            # Parameters section
+            if req_data.get("parameters"):
+                # Create table frame for parameters
+                table_frame = ctk.CTkFrame(details_frame)
+                table_frame.pack(fill="x", pady=5)
+                
+                # Table headers
+                header_frame = ctk.CTkFrame(table_frame, fg_color="#1f538d")
+                header_frame.pack(fill="x", pady=0)
+                
+                name_header = ctk.CTkLabel(header_frame, text="Name", font=("Arial", 12, "bold"), width=120)
+                name_header.pack(side="left", padx=5, pady=5)
+                
+                value_header = ctk.CTkLabel(header_frame, text="Value", font=("Arial", 12, "bold"), width=300)
+                value_header.pack(side="left", padx=5, pady=5)
+                
+                type_header = ctk.CTkLabel(header_frame, text="Type", font=("Arial", 12, "bold"), width=100)
+                type_header.pack(side="left", padx=5, pady=5)
+                
+                # Table rows
+                for param in req_data.get("parameters", []):
+                    row_frame = ctk.CTkFrame(table_frame)
+                    row_frame.pack(fill="x", pady=2)
+                    
+                    name_cell = ctk.CTkLabel(row_frame, text=param.get("name", "Unknown"), width=120, 
+                                          anchor="w", wraplength=110)
+                    name_cell.pack(side="left", padx=5, pady=2)
+                    
+                    value_cell = ctk.CTkLabel(row_frame, text=param.get("value", ""), width=300, 
+                                           anchor="w", wraplength=290)
+                    value_cell.pack(side="left", padx=5, pady=2)
+                    
+                    type_cell = ctk.CTkLabel(row_frame, text=param.get("type", "Unknown"), width=100, 
+                                          anchor="w", wraplength=90)
+                    type_cell.pack(side="left", padx=5, pady=2)
+    
+    def render_default_results(self):
+        # Create header
+        header_label = ctk.CTkLabel(self.processed_scroll, text=f"Results for {self.current_test_type}", font=("Arial", 16, "bold"))
+        header_label.pack(pady=10)
+        
+        # Display the data in a simple format
+        data_text = ctk.CTkTextbox(self.processed_scroll, height=400, width=800)
+        data_text.pack(fill="both", expand=True, pady=10, padx=10)
+        data_text.insert("1.0", json.dumps(self.processed_data, indent=2))
+        data_text.configure(state="disabled")  # Make read-only
+
+def main():
+    parser = argparse.ArgumentParser(description='Security Testing Directory Navigator (Offline GUI)')
+    parser.add_argument('--dir', type=str, required=True, help='Base directory containing test results')
+    
+    args = parser.parse_args()
+    
+    if not os.path.isdir(args.dir):
+        print(f"Error: Directory '{args.dir}' does not exist or is not a directory.")
+        return
+    
+    root = ctk.CTk()
+    app = NavigatorApp(root, args.dir)
+    root.mainloop()
+
+# To this corrected code:
+if __name__ == "__main__":
+    main()
