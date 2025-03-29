@@ -8,6 +8,7 @@ import tkinter as tk
 from tkinter import ttk, scrolledtext
 import customtkinter as ctk
 from PIL import Image, ImageTk
+import math
 
 # Set appearance mode and default color theme
 ctk.set_appearance_mode("System")  # Modes: "System" (standard), "Dark", "Light"
@@ -145,25 +146,42 @@ def process_xpath_results(data):
         dict: Processed data for rendering
     """
     processed = {
-        "vulnerable_parameters": [],
+        "title": data.get("title", ""),
+        "description": data.get("description", ""),
+        "vulnerable_parameters": data.get("vulnerable_parameters", {}),
+        "request_count": data.get("request_count", 0),
+        "requests_with_vulnerable_params": data.get("requests_with_vulnerable_params", 0),
+        "total_vulnerable_params": data.get("total_vulnerable_params", 0),
+        "high_risk_count": data.get("high_risk_count", 0),
+        "medium_risk_count": data.get("medium_risk_count", 0),
+        "low_risk_count": data.get("low_risk_count", 0),
+        "requests": data.get("requests", [])
     }
     
-    # Extract vulnerable parameters with risk levels
-    if "vulnerable_parameters" in data:
-        for param in data["vulnerable_parameters"]:
-            param_data = {
-                "name": param.get("name", "Unknown"),
-                "risk_level": param.get("risk_level", "Unknown"),
-                "risk_factors": param.get("risk_factors", []),
-                "requests": []
-            }
-            
-            # Get request counts
-            if "requests" in param:
-                param_data["requests"] = param["requests"]
-                param_data["request_count"] = len(param["requests"])
-            
-            processed["vulnerable_parameters"].append(param_data)
+    return processed
+
+def process_css_results(data):
+    """
+    Process CSS injection test results.
+    
+    Args:
+        data (dict): JSON data
+        
+    Returns:
+        dict: Processed data for rendering
+    """
+    processed = {
+        "title": data.get("title", ""),
+        "description": data.get("description", ""),
+        "vulnerable_parameters": data.get("vulnerable_parameters", {}),
+        "request_count": data.get("request_count", 0),
+        "requests_with_vulnerable_params": data.get("requests_with_vulnerable_params", 0),
+        "total_vulnerable_params": data.get("total_vulnerable_params", 0),
+        "high_risk_count": data.get("high_risk_count", 0),
+        "medium_risk_count": data.get("medium_risk_count", 0),
+        "low_risk_count": data.get("low_risk_count", 0),
+        "requests": data.get("requests", [])
+    }
     
     return processed
 
@@ -206,20 +224,17 @@ def process_sql_results(data):
         dict: Processed data for rendering
     """
     processed = {
-        "urls": []
+        "title": data.get("title", ""),
+        "description": data.get("description", ""),
+        "vulnerable_parameters": data.get("vulnerable_parameters", {}),
+        "request_count": data.get("request_count", 0),
+        "requests_with_vulnerable_params": data.get("requests_with_vulnerable_params", 0),
+        "total_vulnerable_params": data.get("total_vulnerable_params", 0),
+        "high_risk_count": data.get("high_risk_count", 0),
+        "medium_risk_count": data.get("medium_risk_count", 0),
+        "low_risk_count": data.get("low_risk_count", 0),
+        "requests": data.get("requests", [])
     }
-    
-    # Process each URL with vulnerable parameters
-    if "urls" in data:
-        for url_data in data["urls"]:
-            vuln_params = url_data.get("vulnerable_parameters", [])
-            url_info = {
-                "url": url_data.get("url", "Unknown"),
-                "method": url_data.get("method", "GET"),
-                "vuln_param_count": len(vuln_params),
-                "parameters": vuln_params
-            }
-            processed["urls"].append(url_info)
     
     return processed
 
@@ -259,19 +274,21 @@ def process_path_finder(data):
         dict: Processed data for rendering
     """
     processed = {
-        "urls": [],
+        "url": data.get("url", "Unknown"),
+        "base_url": data.get("base_url", ""),
         "paths": data.get("paths", []),
         "directories": data.get("directories", []),
-        "files": data.get("files", []),
-        "sensitive": data.get("potentially_sensitive", [])
+        "findings": data.get("findings", []),
+        "stats": data.get("stats", {}),
+        "source_urls": data.get("source_urls", []),
+        "aggregate_source_count": data.get("aggregate_source_count", 0)
     }
     
-    # Process URLs
-    if "urls" in data:
-        for url_data in data["urls"]:
-            processed["urls"].append({
-                "url": url_data.get("url", "Unknown")
-            })
+    # Process potentially sensitive files
+    if "files" in data and "potentially_sensitive" in data["files"]:
+        processed["sensitive_files"] = data["files"]["potentially_sensitive"]
+    else:
+        processed["sensitive_files"] = []
     
     return processed
 
@@ -286,19 +303,25 @@ def process_json_results(data):
         dict: Processed data for rendering
     """
     processed = {
-        "requests": []
+        "debug_info": []
     }
     
-    # Process each request
-    if "requests" in data:
-        for req_data in data["requests"]:
-            req_info = {
-                "url": req_data.get("url", "Unknown"),
-                "method": req_data.get("method", "GET"),
-                "content_type": req_data.get("content_type", "Unknown"),
-                "parameters": req_data.get("parameters", [])
+    # Process each debug_info entry
+    if "debug_info" in data:
+        for debug_entry in data["debug_info"]:
+            entry_info = {
+                "index": debug_entry.get("index", "N/A"),
+                "url": debug_entry.get("url", "Unknown"),
+                "body_length": debug_entry.get("body_length", 0)
             }
-            processed["requests"].append(req_info)
+            processed["debug_info"].append(entry_info)
+    
+    # Also include summary data if available
+    processed["request_count"] = data.get("request_count", 0)
+    processed["json_request_count"] = data.get("json_request_count", 0)
+    processed["total_parameters"] = data.get("total_parameters", 0)
+    processed["title"] = data.get("title", "")
+    processed["description"] = data.get("description", "")
     
     return processed
 
@@ -806,76 +829,284 @@ class NavigatorApp:
         header_label = ctk.CTkLabel(self.processed_scroll, text="XPath/XQuery Injection Results", font=("Arial", 16, "bold"))
         header_label.pack(pady=10)
         
-        # Check if there are any vulnerable parameters
-        if not self.processed_data.get("vulnerable_parameters") or len(self.processed_data["vulnerable_parameters"]) == 0:
-            no_data_label = ctk.CTkLabel(self.processed_scroll, text="No vulnerable parameters found.", font=("Arial", 12))
-            no_data_label.pack(pady=10)
-            return
+        # Display title and description if available
+        if self.processed_data.get("title") or self.processed_data.get("description"):
+            info_frame = ctk.CTkFrame(self.processed_scroll)
+            info_frame.pack(fill="x", pady=5, padx=10)
+            
+            if self.processed_data.get("title"):
+                title_label = ctk.CTkLabel(info_frame, text=f"Title: {self.processed_data.get('title')}", 
+                                         font=("Arial", 14, "bold"))
+                title_label.pack(anchor="w", pady=5, padx=10)
+            
+            if self.processed_data.get("description"):
+                desc_label = ctk.CTkLabel(info_frame, text=f"Description: {self.processed_data.get('description')}", 
+                                        font=("Arial", 12))
+                desc_label.pack(anchor="w", pady=5, padx=10)
         
-        # Display each vulnerable parameter
-        for param in self.processed_data["vulnerable_parameters"]:
-            # Create a frame for this parameter
-            param_frame = ctk.CTkFrame(self.processed_scroll)
-            param_frame.pack(fill="x", pady=5, padx=10)
+        # Display statistics
+        stats_frame = ctk.CTkFrame(self.processed_scroll)
+        stats_frame.pack(fill="x", pady=5, padx=10)
+        
+        stats_label = ctk.CTkLabel(stats_frame, text="Statistics", font=("Arial", 14, "bold"))
+        stats_label.pack(anchor="w", pady=5, padx=10)
+        
+        stats_grid = ctk.CTkFrame(stats_frame)
+        stats_grid.pack(fill="x", pady=5, padx=10)
+        
+        # Create a grid for stats (2x3)
+        req_count_label = ctk.CTkLabel(stats_grid, 
+                                     text=f"Total Requests: {self.processed_data.get('request_count', 0)}", 
+                                     font=("Arial", 12))
+        req_count_label.grid(row=0, column=0, sticky="w", padx=10, pady=2)
+        
+        vuln_req_label = ctk.CTkLabel(stats_grid, 
+                                    text=f"Requests with Vulnerable Params: {self.processed_data.get('requests_with_vulnerable_params', 0)}", 
+                                    font=("Arial", 12))
+        vuln_req_label.grid(row=0, column=1, sticky="w", padx=10, pady=2)
+        
+        total_vuln_label = ctk.CTkLabel(stats_grid, 
+                                      text=f"Total Vulnerable Params: {self.processed_data.get('total_vulnerable_params', 0)}", 
+                                      font=("Arial", 12))
+        total_vuln_label.grid(row=0, column=2, sticky="w", padx=10, pady=2)
+        
+        high_risk_label = ctk.CTkLabel(stats_grid, 
+                                     text=f"High Risk: {self.processed_data.get('high_risk_count', 0)}", 
+                                     font=("Arial", 12), text_color="#ff5555")
+        high_risk_label.grid(row=1, column=0, sticky="w", padx=10, pady=2)
+        
+        medium_risk_label = ctk.CTkLabel(stats_grid, 
+                                       text=f"Medium Risk: {self.processed_data.get('medium_risk_count', 0)}", 
+                                       font=("Arial", 12), text_color="#ffaa55")
+        medium_risk_label.grid(row=1, column=1, sticky="w", padx=10, pady=2)
+        
+        low_risk_label = ctk.CTkLabel(stats_grid, 
+                                    text=f"Low Risk: {self.processed_data.get('low_risk_count', 0)}", 
+                                    font=("Arial", 12), text_color="#55aa55")
+        low_risk_label.grid(row=1, column=2, sticky="w", padx=10, pady=2)
+        
+        # Check if there are any requests
+        if not self.processed_data.get("requests") or len(self.processed_data["requests"]) == 0:
+            if not self.processed_data.get("vulnerable_parameters") or len(self.processed_data["vulnerable_parameters"]) == 0:
+                no_data_label = ctk.CTkLabel(self.processed_scroll, text="No vulnerable parameters found.", font=("Arial", 12))
+                no_data_label.pack(pady=10)
+                return
+        
+        # Create a frame for vulnerable parameters if any exist
+        if self.processed_data.get("vulnerable_parameters") and len(self.processed_data["vulnerable_parameters"]) > 0:
+            vuln_params_frame = ctk.CTkFrame(self.processed_scroll)
+            vuln_params_frame.pack(fill="x", pady=10, padx=10)
             
-            # Risk level colors
-            risk_color = "#339900"  # Low (green)
-            if param.get("risk_level") == "High":
-                risk_color = "#cc0000"  # High (red)
-            elif param.get("risk_level") == "Medium":
-                risk_color = "#ff9900"  # Medium (orange)
+            vuln_params_label = ctk.CTkLabel(vuln_params_frame, text="Vulnerable Parameters", font=("Arial", 14, "bold"))
+            vuln_params_label.pack(anchor="w", pady=5, padx=10)
             
-            # Parameter header
-            header_frame = ctk.CTkFrame(param_frame, fg_color="#2b2b2b")
-            header_frame.pack(fill="x", pady=0)
+            # Create a scrollable frame for vulnerable parameters
+            params_scroll = ctk.CTkScrollableFrame(vuln_params_frame, height=200)
+            params_scroll.pack(fill="x", expand=True, pady=5, padx=10)
             
-            param_name_label = ctk.CTkLabel(header_frame, text=param.get("name", "Unknown"), font=("Arial", 12, "bold"))
-            param_name_label.pack(side="left", padx=10, pady=5)
-            
-            risk_label = ctk.CTkLabel(header_frame, text=f"Risk: {param.get('risk_level', 'Unknown')}", 
-                                    font=("Arial", 12, "bold"), text_color=risk_color)
-            risk_label.pack(side="right", padx=10, pady=5)
-            
-            # Create details frame that starts collapsed
-            details_frame = ctk.CTkFrame(param_frame)
-            details_frame.pack(fill="x", pady=5, padx=10)
-            details_frame.pack_forget()  # Initially hidden
-            
-            # Toggle button
-            def toggle_details(f=details_frame, b=None):
-                if f.winfo_ismapped():
-                    f.pack_forget()
-                    if b:
-                        b.configure(text="Show Details")
-                else:
-                    f.pack(fill="x", pady=5, padx=10)
-                    if b:
-                        b.configure(text="Hide Details")
-            
-            toggle_button = ctk.CTkButton(param_frame, text="Show Details", command=lambda f=details_frame, b=toggle_button: toggle_details(f, b))
-            toggle_button.pack(anchor="w", pady=5, padx=10)
-            
-            # Risk factors section
-            if param.get("risk_factors"):
-                risk_factors_label = ctk.CTkLabel(details_frame, text="Risk Factors:", font=("Arial", 12, "bold"))
-                risk_factors_label.pack(anchor="w", pady=5)
+            # Display each vulnerable parameter
+            for param_name, param_data in self.processed_data["vulnerable_parameters"].items():
+                # Create a frame for this parameter
+                param_frame = ctk.CTkFrame(params_scroll)
+                param_frame.pack(fill="x", pady=5)
                 
-                for factor in param.get("risk_factors", []):
-                    factor_label = ctk.CTkLabel(details_frame, text=f"• {factor}", font=("Arial", 12))
-                    factor_label.pack(anchor="w", padx=10)
+                # Risk level colors
+                risk_color = "#55aa55"  # Low (green)
+                if param_data.get("risk_level") == "high":
+                    risk_color = "#ff5555"  # High (red)
+                elif param_data.get("risk_level") == "medium":
+                    risk_color = "#ffaa55"  # Medium (orange)
+                
+                # Parameter header
+                header_frame = ctk.CTkFrame(param_frame, fg_color="#2b2b2b")
+                header_frame.pack(fill="x", pady=0)
+                
+                param_name_label = ctk.CTkLabel(header_frame, text=param_name, font=("Arial", 12, "bold"))
+                param_name_label.pack(side="left", padx=10, pady=5)
+                
+                risk_level = param_data.get("risk_level", "unknown").capitalize()
+                risk_label = ctk.CTkLabel(header_frame, text=f"Risk: {risk_level}", 
+                                        font=("Arial", 12, "bold"), text_color=risk_color)
+                risk_label.pack(side="right", padx=10, pady=5)
+                
+                # Create details frame that starts collapsed
+                details_frame = ctk.CTkFrame(param_frame)
+                details_frame.pack(fill="x", pady=5, padx=10)
+                details_frame.pack_forget()  # Initially hidden
+                
+                # Toggle button
+                def toggle_details(f=details_frame, b=None):
+                    if f.winfo_ismapped():
+                        f.pack_forget()
+                        if b:
+                            b.configure(text="Show Details")
+                    else:
+                        f.pack(fill="x", pady=5, padx=10)
+                        if b:
+                            b.configure(text="Hide Details")
+                
+                toggle_button = ctk.CTkButton(param_frame, text="Show Details", 
+                                           command=lambda f=details_frame, b=toggle_button: toggle_details(f, b))
+                toggle_button.pack(anchor="w", pady=5, padx=10)
+                
+                # Parameter details
+                details_text = f"Occurrences: {param_data.get('count', 0)}"
+                details_label = ctk.CTkLabel(details_frame, text=details_text, font=("Arial", 12))
+                details_label.pack(anchor="w", pady=2)
+                
+                # Risk factors
+                if param_data.get("risk_factors"):
+                    risk_factors_label = ctk.CTkLabel(details_frame, text="Risk Factors:", font=("Arial", 12, "bold"))
+                    risk_factors_label.pack(anchor="w", pady=5)
+                    
+                    for factor in param_data.get("risk_factors", []):
+                        factor_label = ctk.CTkLabel(details_frame, text=f"• {factor}", font=("Arial", 12))
+                        factor_label.pack(anchor="w", padx=10)
+                
+                # Sources
+                if param_data.get("sources"):
+                    sources_label = ctk.CTkLabel(details_frame, text="Sources:", font=("Arial", 12, "bold"))
+                    sources_label.pack(anchor="w", pady=5)
+                    
+                    sources_text = ", ".join(param_data.get("sources", []))
+                    source_label = ctk.CTkLabel(details_frame, text=sources_text, font=("Arial", 12))
+                    source_label.pack(anchor="w", padx=10)
+                
+                # Values preview
+                if param_data.get("values"):
+                    values_label = ctk.CTkLabel(details_frame, text="Sample Values:", font=("Arial", 12, "bold"))
+                    values_label.pack(anchor="w", pady=5)
+                    
+                    for value in param_data.get("values", [])[:3]:  # Show up to 3 values
+                        value_label = ctk.CTkLabel(details_frame, text=f"• {value}", font=("Arial", 12))
+                        value_label.pack(anchor="w", padx=10)
+                    
+                    if len(param_data.get("values", [])) > 3:
+                        more_label = ctk.CTkLabel(details_frame, 
+                                               text=f"... and {len(param_data.get('values', [])) - 3} more", 
+                                               font=("Arial", 12, "italic"))
+                        more_label.pack(anchor="w", padx=10)
+        
+        # Create a frame for request list if there are any requests
+        if self.processed_data.get("requests") and len(self.processed_data["requests"]) > 0:
+            requests_frame = ctk.CTkFrame(self.processed_scroll)
+            requests_frame.pack(fill="both", expand=True, pady=10, padx=10)
             
-            # Requests section
-            if param.get("requests"):
-                requests_label = ctk.CTkLabel(details_frame, text=f"Found in {len(param.get('requests', []))} Requests:", 
-                                            font=("Arial", 12, "bold"))
-                requests_label.pack(anchor="w", pady=5)
+            requests_label = ctk.CTkLabel(requests_frame, text="Affected Requests", font=("Arial", 14, "bold"))
+            requests_label.pack(anchor="w", pady=5, padx=10)
+            
+            # Create a scrollable frame for the requests
+            requests_scroll = ctk.CTkScrollableFrame(requests_frame, height=200)
+            requests_scroll.pack(fill="both", expand=True, pady=5, padx=10)
+            
+            # Create list header
+            header_frame = ctk.CTkFrame(requests_scroll, fg_color="#1f538d")
+            header_frame.pack(fill="x", pady=(0, 5))
+            
+            index_header = ctk.CTkLabel(header_frame, text="Index", font=("Arial", 12, "bold"), width=60)
+            index_header.pack(side="left", padx=5, pady=5)
+            
+            method_header = ctk.CTkLabel(header_frame, text="Method", font=("Arial", 12, "bold"), width=80)
+            method_header.pack(side="left", padx=5, pady=5)
+            
+            url_header = ctk.CTkLabel(header_frame, text="URL", font=("Arial", 12, "bold"), width=400)
+            url_header.pack(side="left", padx=5, pady=5)
+            
+            params_header = ctk.CTkLabel(header_frame, text="Vulnerable Params", font=("Arial", 12, "bold"), width=100)
+            params_header.pack(side="left", padx=5, pady=5)
+            
+            # Add items to the list
+            for req in self.processed_data.get("requests", []):
+                row_frame = ctk.CTkFrame(requests_scroll)
+                row_frame.pack(fill="x", pady=1)
                 
-                requests_frame = ctk.CTkScrollableFrame(details_frame, height=150)
-                requests_frame.pack(fill="x", pady=5)
+                index_label = ctk.CTkLabel(row_frame, text=str(req.get("index", "")), width=60)
+                index_label.pack(side="left", padx=5, pady=5)
                 
-                for req in param.get("requests", []):
-                    req_label = ctk.CTkLabel(requests_frame, text=f"• {req}", font=("Arial", 12))
-                    req_label.pack(anchor="w", padx=10)
+                method_label = ctk.CTkLabel(row_frame, text=req.get("method", "GET"), width=80)
+                method_label.pack(side="left", padx=5, pady=5)
+                
+                url_label = ctk.CTkLabel(row_frame, text=req.get("url", ""), width=400, 
+                                       anchor="w", wraplength=390)
+                url_label.pack(side="left", padx=5, pady=5)
+                
+                params_label = ctk.CTkLabel(row_frame, text=str(req.get("vulnerable_param_count", 0)), width=100)
+                params_label.pack(side="left", padx=5, pady=5)
+                
+                # Create details frame that starts collapsed
+                details_frame = ctk.CTkFrame(requests_scroll)
+                details_frame.pack(fill="x", pady=2, padx=20)
+                details_frame.pack_forget()  # Initially hidden
+                
+                # Toggle button
+                def toggle_details(f=details_frame, b=None, r=row_frame):
+                    if f.winfo_ismapped():
+                        f.pack_forget()
+                        if b:
+                            b.configure(text="➕")
+                        if r:
+                            r.configure(fg_color=("gray90", "gray10"))
+                    else:
+                        f.pack(fill="x", pady=2, padx=20, after=r)
+                        if b:
+                            b.configure(text="➖")
+                        if r:
+                            r.configure(fg_color=("gray80", "gray20"))
+                
+                details_button = ctk.CTkButton(row_frame, text="➕", width=30, height=20,
+                                            command=lambda f=details_frame, b=None, r=row_frame: toggle_details(f, b, r))
+                details_button.pack(side="right", padx=5)
+                
+                # Only add parameter details if there are parameters
+                if req.get("parameters") and len(req.get("parameters", [])) > 0:
+                    # Create a table for the parameters
+                    param_table_frame = ctk.CTkFrame(details_frame)
+                    param_table_frame.pack(fill="x", pady=5)
+                    
+                    # Add parameter headers
+                    param_header_frame = ctk.CTkFrame(param_table_frame, fg_color="#1f538d")
+                    param_header_frame.pack(fill="x", pady=0)
+                    
+                    param_name_header = ctk.CTkLabel(param_header_frame, text="Name", font=("Arial", 12, "bold"), width=120)
+                    param_name_header.pack(side="left", padx=5, pady=2)
+                    
+                    param_source_header = ctk.CTkLabel(param_header_frame, text="Source", font=("Arial", 12, "bold"), width=80)
+                    param_source_header.pack(side="left", padx=5, pady=2)
+                    
+                    param_value_header = ctk.CTkLabel(param_header_frame, text="Value", font=("Arial", 12, "bold"), width=200)
+                    param_value_header.pack(side="left", padx=5, pady=2)
+                    
+                    param_risk_header = ctk.CTkLabel(param_header_frame, text="Risk", font=("Arial", 12, "bold"), width=80)
+                    param_risk_header.pack(side="left", padx=5, pady=2)
+                    
+                    # Add parameter rows
+                    for param in req.get("parameters", []):
+                        param_row_frame = ctk.CTkFrame(param_table_frame)
+                        param_row_frame.pack(fill="x", pady=1)
+                        
+                        # Risk level colors
+                        risk_color = "#55aa55"  # Low (green)
+                        if param.get("risk_level") == "high":
+                            risk_color = "#ff5555"  # High (red)
+                        elif param.get("risk_level") == "medium":
+                            risk_color = "#ffaa55"  # Medium (orange)
+                        
+                        param_name_label = ctk.CTkLabel(param_row_frame, text=param.get("name", ""), 
+                                                     width=120, anchor="w", wraplength=110)
+                        param_name_label.pack(side="left", padx=5, pady=2)
+                        
+                        param_source_label = ctk.CTkLabel(param_row_frame, text=param.get("source", ""), 
+                                                       width=80, anchor="w")
+                        param_source_label.pack(side="left", padx=5, pady=2)
+                        
+                        param_value_label = ctk.CTkLabel(param_row_frame, text=param.get("value", ""), 
+                                                      width=200, anchor="w", wraplength=190)
+                        param_value_label.pack(side="left", padx=5, pady=2)
+                        
+                        risk_level = param.get("risk_level", "unknown").capitalize()
+                        param_risk_label = ctk.CTkLabel(param_row_frame, text=risk_level, 
+                                                     width=80, text_color=risk_color)
+                        param_risk_label.pack(side="left", padx=5, pady=2)
     
     def render_url_parameters_results(self):
         # Create header
@@ -966,85 +1197,242 @@ class NavigatorApp:
         header_label = ctk.CTkLabel(self.processed_scroll, text="SQL Injection Results", font=("Arial", 16, "bold"))
         header_label.pack(pady=10)
         
-        # Check if there are any URLs
-        if not self.processed_data.get("urls") or len(self.processed_data["urls"]) == 0:
-            no_data_label = ctk.CTkLabel(self.processed_scroll, text="No vulnerable URLs found.", font=("Arial", 12))
-            no_data_label.pack(pady=10)
-            return
+        # Display title and description if available
+        if self.processed_data.get("title") or self.processed_data.get("description"):
+            info_frame = ctk.CTkFrame(self.processed_scroll)
+            info_frame.pack(fill="x", pady=5, padx=10)
+            
+            if self.processed_data.get("title"):
+                title_label = ctk.CTkLabel(info_frame, text=f"Title: {self.processed_data.get('title')}", 
+                                         font=("Arial", 14, "bold"))
+                title_label.pack(anchor="w", pady=5, padx=10)
+            
+            if self.processed_data.get("description"):
+                desc_label = ctk.CTkLabel(info_frame, text=f"Description: {self.processed_data.get('description')}", 
+                                        font=("Arial", 12))
+                desc_label.pack(anchor="w", pady=5, padx=10)
         
-        # Display each URL
-        for url_data in self.processed_data["urls"]:
-            # Create a frame for this URL
-            url_frame = ctk.CTkFrame(self.processed_scroll)
-            url_frame.pack(fill="x", pady=5, padx=10)
+        # Display statistics
+        stats_frame = ctk.CTkFrame(self.processed_scroll)
+        stats_frame.pack(fill="x", pady=5, padx=10)
+        
+        stats_label = ctk.CTkLabel(stats_frame, text="Statistics", font=("Arial", 14, "bold"))
+        stats_label.pack(anchor="w", pady=5, padx=10)
+        
+        stats_grid = ctk.CTkFrame(stats_frame)
+        stats_grid.pack(fill="x", pady=5, padx=10)
+        
+        # Create a grid for stats (2x3)
+        req_count_label = ctk.CTkLabel(stats_grid, 
+                                     text=f"Total Requests: {self.processed_data.get('request_count', 0)}", 
+                                     font=("Arial", 12))
+        req_count_label.grid(row=0, column=0, sticky="w", padx=10, pady=2)
+        
+        vuln_req_label = ctk.CTkLabel(stats_grid, 
+                                    text=f"Requests with Vulnerable Params: {self.processed_data.get('requests_with_vulnerable_params', 0)}", 
+                                    font=("Arial", 12))
+        vuln_req_label.grid(row=0, column=1, sticky="w", padx=10, pady=2)
+        
+        total_vuln_label = ctk.CTkLabel(stats_grid, 
+                                      text=f"Total Vulnerable Params: {self.processed_data.get('total_vulnerable_params', 0)}", 
+                                      font=("Arial", 12))
+        total_vuln_label.grid(row=0, column=2, sticky="w", padx=10, pady=2)
+        
+        high_risk_label = ctk.CTkLabel(stats_grid, 
+                                     text=f"High Risk: {self.processed_data.get('high_risk_count', 0)}", 
+                                     font=("Arial", 12), text_color="#ff5555")
+        high_risk_label.grid(row=1, column=0, sticky="w", padx=10, pady=2)
+        
+        medium_risk_label = ctk.CTkLabel(stats_grid, 
+                                       text=f"Medium Risk: {self.processed_data.get('medium_risk_count', 0)}", 
+                                       font=("Arial", 12), text_color="#ffaa55")
+        medium_risk_label.grid(row=1, column=1, sticky="w", padx=10, pady=2)
+        
+        low_risk_label = ctk.CTkLabel(stats_grid, 
+                                    text=f"Low Risk: {self.processed_data.get('low_risk_count', 0)}", 
+                                    font=("Arial", 12), text_color="#55aa55")
+        low_risk_label.grid(row=1, column=2, sticky="w", padx=10, pady=2)
+        
+        # Mind Map - Top Rectangle
+        mind_map_frame = ctk.CTkFrame(self.processed_scroll, height=300)
+        mind_map_frame.pack(fill="x", pady=10, padx=10)
+        
+        # Create canvas for mind map
+        mind_map_canvas = tk.Canvas(mind_map_frame, height=300, bg="#2b2b2b", highlightthickness=0)
+        mind_map_canvas.pack(fill="x", expand=True)
+        
+        # Set up mind map dimensions
+        canvas_width = 800
+        canvas_height = 300
+        center_x = canvas_width // 2
+        center_y = canvas_height // 2
+        center_radius = 50
+        param_radius = 40
+        
+        # Draw central circle
+        mind_map_canvas.create_oval(
+            center_x - center_radius, 
+            center_y - center_radius, 
+            center_x + center_radius, 
+            center_y + center_radius, 
+            fill="#1f538d", 
+            outline="white"
+        )
+        
+        # Add central text
+        mind_map_canvas.create_text(
+            center_x, 
+            center_y, 
+            text="Vulnerable\nParameters", 
+            fill="white", 
+            font=("Arial", 12, "bold"),
+            justify="center"
+        )
+        
+        # Get vulnerable parameters
+        vulnerable_params = self.processed_data.get("vulnerable_parameters", {})
+        
+        # Calculate positions for parameter nodes
+        num_params = len(vulnerable_params)
+        if num_params > 0:
+            # Calculate angle between each parameter
+            angle_step = 2 * 3.14159 / num_params
+            distance = 150  # Distance from center
             
-            # URL header
-            header_frame = ctk.CTkFrame(url_frame, fg_color="#2b2b2b")
-            header_frame.pack(fill="x", pady=0)
+            # Risk level colors
+            risk_colors = {
+                "High": "#ff5555",
+                "Medium": "#ffaa55",
+                "Low": "#55aa55"
+            }
             
-            url_label = ctk.CTkLabel(header_frame, text=url_data.get("url", "Unknown"), font=("Arial", 12, "bold"),
-                                   wraplength=600, justify="left")
-            url_label.pack(side="left", padx=10, pady=5)
-            
-            vuln_label = ctk.CTkLabel(header_frame, text=f"{url_data.get('method', 'GET')} - {url_data.get('vuln_param_count', 0)} vulnerable params", 
-                                    font=("Arial", 12), text_color="#ff6666")
-            vuln_label.pack(side="right", padx=10, pady=5)
-            
-            # Create details frame that starts collapsed
-            details_frame = ctk.CTkFrame(url_frame)
-            details_frame.pack(fill="x", pady=5, padx=10)
-            details_frame.pack_forget()  # Initially hidden
-            
-            # Toggle button
-            def toggle_details(f=details_frame, b=None):
-                if f.winfo_ismapped():
-                    f.pack_forget()
-                    if b:
-                        b.configure(text="Show Vulnerable Parameters")
-                else:
-                    f.pack(fill="x", pady=5, padx=10)
-                    if b:
-                        b.configure(text="Hide Vulnerable Parameters")
-            
-            toggle_button = ctk.CTkButton(url_frame, text="Show Vulnerable Parameters", 
-                                       command=lambda f=details_frame, b=toggle_button: toggle_details(f, b))
-            toggle_button.pack(anchor="w", pady=5, padx=10)
-            
-            # Parameters section
-            if url_data.get("parameters"):
-                # Create table frame for parameters
-                table_frame = ctk.CTkFrame(details_frame)
-                table_frame.pack(fill="x", pady=5)
+            # Draw each parameter node
+            param_idx = 0
+            for param_name, param_data in vulnerable_params.items():
+                # Calculate position
+                angle = param_idx * angle_step
+                param_x = center_x + distance * math.cos(angle)
+                param_y = center_y + distance * math.sin(angle)
                 
-                # Table headers
-                header_frame = ctk.CTkFrame(table_frame, fg_color="#1f538d")
-                header_frame.pack(fill="x", pady=0)
+                # Get risk level and color
+                risk_level = param_data.get("risk_level", "Unknown")
+                fill_color = risk_colors.get(risk_level, "#777777")
                 
-                name_header = ctk.CTkLabel(header_frame, text="Name", font=("Arial", 12, "bold"), width=120)
-                name_header.pack(side="left", padx=5, pady=5)
+                # Draw line to parameter
+                mind_map_canvas.create_line(
+                    center_x, 
+                    center_y, 
+                    param_x, 
+                    param_y, 
+                    fill="white", 
+                    width=2
+                )
                 
-                value_header = ctk.CTkLabel(header_frame, text="Value", font=("Arial", 12, "bold"), width=200)
-                value_header.pack(side="left", padx=5, pady=5)
+                # Draw parameter circle
+                mind_map_canvas.create_oval(
+                    param_x - param_radius, 
+                    param_y - param_radius, 
+                    param_x + param_radius, 
+                    param_y + param_radius, 
+                    fill=fill_color, 
+                    outline="white"
+                )
                 
-                vuln_header = ctk.CTkLabel(header_frame, text="Vulnerability", font=("Arial", 12, "bold"), width=200)
-                vuln_header.pack(side="left", padx=5, pady=5)
+                # Add parameter name
+                mind_map_canvas.create_text(
+                    param_x, 
+                    param_y, 
+                    text=param_name, 
+                    fill="white", 
+                    font=("Arial", 12, "bold")
+                )
                 
-                # Table rows
-                for param in url_data.get("parameters", []):
-                    row_frame = ctk.CTkFrame(table_frame)
-                    row_frame.pack(fill="x", pady=2)
+                # Add parameter details
+                details_text = f"Count: {param_data.get('count', 0)}\n{risk_level} Risk"
+                mind_map_canvas.create_text(
+                    param_x, 
+                    param_y + param_radius + 15, 
+                    text=details_text, 
+                    fill="white", 
+                    font=("Arial", 10),
+                    justify="center"
+                )
+                
+                param_idx += 1
+        
+        # Request List - Bottom Rectangle
+        list_frame = ctk.CTkFrame(self.processed_scroll)
+        list_frame.pack(fill="both", expand=True, pady=10, padx=10)
+        
+        # Create header for list
+        list_header = ctk.CTkLabel(list_frame, text="Vulnerable Parameters by Request", font=("Arial", 14, "bold"))
+        list_header.pack(anchor="w", pady=5, padx=10)
+        
+        # Create a scrollable frame for the list
+        list_scroll = ctk.CTkScrollableFrame(list_frame, height=250)
+        list_scroll.pack(fill="both", expand=True, pady=5, padx=10)
+        
+        # Create list header
+        header_frame = ctk.CTkFrame(list_scroll, fg_color="#1f538d")
+        header_frame.pack(fill="x", pady=(0, 5))
+        
+        index_header = ctk.CTkLabel(header_frame, text="Index", font=("Arial", 12, "bold"), width=60)
+        index_header.pack(side="left", padx=5, pady=5)
+        
+        method_header = ctk.CTkLabel(header_frame, text="Method", font=("Arial", 12, "bold"), width=80)
+        method_header.pack(side="left", padx=5, pady=5)
+        
+        url_header = ctk.CTkLabel(header_frame, text="URL", font=("Arial", 12, "bold"), width=300)
+        url_header.pack(side="left", padx=5, pady=5)
+        
+        param_header = ctk.CTkLabel(header_frame, text="Parameter", font=("Arial", 12, "bold"), width=120)
+        param_header.pack(side="left", padx=5, pady=5)
+        
+        value_header = ctk.CTkLabel(header_frame, text="Value", font=("Arial", 12, "bold"), width=120)
+        value_header.pack(side="left", padx=5, pady=5)
+        
+        risk_header = ctk.CTkLabel(header_frame, text="Risk Level", font=("Arial", 12, "bold"), width=100)
+        risk_header.pack(side="left", padx=5, pady=5)
+        
+        # Add items to the list
+        if not self.processed_data.get("requests") or len(self.processed_data["requests"]) == 0:
+            no_req_label = ctk.CTkLabel(list_scroll, text="No requests with vulnerable parameters found.", font=("Arial", 12))
+            no_req_label.pack(pady=10)
+        else:
+            for req in self.processed_data.get("requests", []):
+                # For each vulnerable parameter in a request, create a separate row
+                for param in req.get("parameters", []):
+                    row_frame = ctk.CTkFrame(list_scroll)
+                    row_frame.pack(fill="x", pady=1)
                     
-                    name_cell = ctk.CTkLabel(row_frame, text=param.get("name", "Unknown"), width=120, 
-                                          anchor="w", wraplength=110)
-                    name_cell.pack(side="left", padx=5, pady=2)
+                    # Risk level colors
+                    risk_color = "#55aa55"  # Low (green)
+                    if param.get("risk_level") == "High":
+                        risk_color = "#ff5555"  # High (red)
+                    elif param.get("risk_level") == "Medium":
+                        risk_color = "#ffaa55"  # Medium (orange)
                     
-                    value_cell = ctk.CTkLabel(row_frame, text=param.get("value", ""), width=200, 
-                                           anchor="w", wraplength=190)
-                    value_cell.pack(side="left", padx=5, pady=2)
+                    index_label = ctk.CTkLabel(row_frame, text=str(req.get("index", "")), width=60)
+                    index_label.pack(side="left", padx=5, pady=5)
                     
-                    vuln_cell = ctk.CTkLabel(row_frame, text=param.get("vulnerability", "Unknown"), width=200, 
-                                          anchor="w", wraplength=190, text_color="#ff6666")
-                    vuln_cell.pack(side="left", padx=5, pady=2)
+                    method_label = ctk.CTkLabel(row_frame, text=req.get("method", "GET"), width=80)
+                    method_label.pack(side="left", padx=5, pady=5)
+                    
+                    url_label = ctk.CTkLabel(row_frame, text=req.get("url", ""), width=300, 
+                                           anchor="w", wraplength=290)
+                    url_label.pack(side="left", padx=5, pady=5)
+                    
+                    param_label = ctk.CTkLabel(row_frame, text=param.get("name", ""), width=120, 
+                                             anchor="w", wraplength=110)
+                    param_label.pack(side="left", padx=5, pady=5)
+                    
+                    value_label = ctk.CTkLabel(row_frame, text=param.get("value", ""), width=120, 
+                                             anchor="w", wraplength=110)
+                    value_label.pack(side="left", padx=5, pady=5)
+                    
+                    risk_label = ctk.CTkLabel(row_frame, text=param.get("risk_level", "Unknown"), width=100, 
+                                            text_color=risk_color, font=("Arial", 12, "bold"))
+                    risk_label.pack(side="left", padx=5, pady=5)
     
     def render_sensitive_info_results(self):
         # Create header
@@ -1109,166 +1497,241 @@ class NavigatorApp:
         header_label = ctk.CTkLabel(self.processed_scroll, text="Path Finder Results", font=("Arial", 16, "bold"))
         header_label.pack(pady=10)
         
-        # Create tabs for different path types
-        path_tab_view = ctk.CTkTabview(self.processed_scroll)
-        path_tab_view.pack(fill="x", pady=10, padx=10)
+        # Display stats section
+        stats_frame = ctk.CTkFrame(self.processed_scroll)
+        stats_frame.pack(fill="x", pady=5, padx=10)
         
-        # Create tabs
-        urls_tab = path_tab_view.add("URLs")
-        paths_tab = path_tab_view.add("Paths")
-        dirs_tab = path_tab_view.add("Directories")
-        files_tab = path_tab_view.add("Files")
-        sensitive_tab = path_tab_view.add("Sensitive")
+        # URL info
+        url_frame = ctk.CTkFrame(stats_frame)
+        url_frame.pack(fill="x", pady=5, padx=5)
         
-        # URLs tab
-        urls_frame = ctk.CTkScrollableFrame(urls_tab, height=300)
-        urls_frame.pack(fill="both", expand=True, padx=5, pady=5)
+        url_label = ctk.CTkLabel(url_frame, text=f"Target URL: {self.processed_data.get('url', 'Unknown')}", 
+                               font=("Arial", 12, "bold"))
+        url_label.pack(anchor="w", pady=2, padx=5)
         
-        if not self.processed_data.get("urls") or len(self.processed_data["urls"]) == 0:
-            no_urls_label = ctk.CTkLabel(urls_frame, text="No URLs found.", font=("Arial", 12))
-            no_urls_label.pack(pady=10)
-        else:
-            for url in self.processed_data.get("urls", []):
-                url_label = ctk.CTkLabel(urls_frame, text=url.get("url", "Unknown"), font=("Arial", 12),
-                                      wraplength=600, justify="left")
-                url_label.pack(anchor="w", pady=2)
+        if self.processed_data.get("base_url"):
+            base_url_label = ctk.CTkLabel(url_frame, text=f"Base URL: {self.processed_data.get('base_url')}", 
+                                        font=("Arial", 12))
+            base_url_label.pack(anchor="w", pady=2, padx=5)
         
-        # Paths tab
-        paths_frame = ctk.CTkScrollableFrame(paths_tab, height=300)
-        paths_frame.pack(fill="both", expand=True, padx=5, pady=5)
-        
-        if not self.processed_data.get("paths") or len(self.processed_data["paths"]) == 0:
-            no_paths_label = ctk.CTkLabel(paths_frame, text="No paths found.", font=("Arial", 12))
-            no_paths_label.pack(pady=10)
-        else:
-            for path in self.processed_data.get("paths", []):
-                path_label = ctk.CTkLabel(paths_frame, text=path, font=("Arial", 12),
-                                       wraplength=600, justify="left")
-                path_label.pack(anchor="w", pady=2)
-        
-        # Directories tab
-        dirs_frame = ctk.CTkScrollableFrame(dirs_tab, height=300)
-        dirs_frame.pack(fill="both", expand=True, padx=5, pady=5)
-        
-        if not self.processed_data.get("directories") or len(self.processed_data["directories"]) == 0:
-            no_dirs_label = ctk.CTkLabel(dirs_frame, text="No directories found.", font=("Arial", 12))
-            no_dirs_label.pack(pady=10)
-        else:
-            for directory in self.processed_data.get("directories", []):
-                dir_label = ctk.CTkLabel(dirs_frame, text=directory, font=("Arial", 12),
-                                      wraplength=600, justify="left")
-                dir_label.pack(anchor="w", pady=2)
-        
-        # Files tab
-        files_frame = ctk.CTkScrollableFrame(files_tab, height=300)
-        files_frame.pack(fill="both", expand=True, padx=5, pady=5)
-        
-        if not self.processed_data.get("files") or len(self.processed_data["files"]) == 0:
-            no_files_label = ctk.CTkLabel(files_frame, text="No files found.", font=("Arial", 12))
-            no_files_label.pack(pady=10)
-        else:
-            for file in self.processed_data.get("files", []):
-                file_label = ctk.CTkLabel(files_frame, text=file, font=("Arial", 12),
-                                       wraplength=600, justify="left")
-                file_label.pack(anchor="w", pady=2)
-        
-        # Sensitive tab
-        sensitive_frame = ctk.CTkScrollableFrame(sensitive_tab, height=300)
-        sensitive_frame.pack(fill="both", expand=True, padx=5, pady=5)
-        
-        if not self.processed_data.get("sensitive") or len(self.processed_data["sensitive"]) == 0:
-            no_sensitive_label = ctk.CTkLabel(sensitive_frame, text="No potentially sensitive items found.", font=("Arial", 12))
-            no_sensitive_label.pack(pady=10)
-        else:
-            for item in self.processed_data.get("sensitive", []):
-                item_label = ctk.CTkLabel(sensitive_frame, text=item, font=("Arial", 12),
-                                      wraplength=600, justify="left", text_color="#ff6666")
-                item_label.pack(anchor="w", pady=2)
-    
-    def render_json_results(self):
-        # Create header
-        header_label = ctk.CTkLabel(self.processed_scroll, text="JSON Injection Results", font=("Arial", 16, "bold"))
-        header_label.pack(pady=10)
-        
-        # Check if there are any requests
-        if not self.processed_data.get("requests") or len(self.processed_data["requests"]) == 0:
-            no_data_label = ctk.CTkLabel(self.processed_scroll, text="No requests found.", font=("Arial", 12))
-            no_data_label.pack(pady=10)
-            return
-        
-        # Display each request
-        for req_data in self.processed_data["requests"]:
-            # Create a frame for this request
-            req_frame = ctk.CTkFrame(self.processed_scroll)
-            req_frame.pack(fill="x", pady=5, padx=10)
+        # Stats info
+        if self.processed_data.get("stats"):
+            stats_header = ctk.CTkLabel(stats_frame, text="Statistics:", font=("Arial", 14, "bold"))
+            stats_header.pack(anchor="w", pady=5, padx=5)
             
-            # Request header
-            header_frame = ctk.CTkFrame(req_frame, fg_color="#2b2b2b")
-            header_frame.pack(fill="x", pady=0)
+            stats_grid = ctk.CTkFrame(stats_frame)
+            stats_grid.pack(fill="x", pady=5, padx=5)
             
-            url_label = ctk.CTkLabel(header_frame, text=req_data.get("url", "Unknown"), font=("Arial", 12, "bold"),
-                                   wraplength=500, justify="left")
-            url_label.pack(side="left", padx=10, pady=5)
+            # Create a grid for stats (2x2)
+            stats = self.processed_data.get("stats", {})
             
-            method_label = ctk.CTkLabel(header_frame, text=f"{req_data.get('method', 'GET')} - {req_data.get('content_type', 'Unknown')}", 
+            # Row 1
+            total_paths_label = ctk.CTkLabel(stats_grid, text=f"Total Paths: {stats.get('total_paths', 0)}", 
+                                           font=("Arial", 12))
+            total_paths_label.grid(row=0, column=0, sticky="w", padx=10, pady=2)
+            
+            total_dirs_label = ctk.CTkLabel(stats_grid, text=f"Total Directories: {stats.get('total_directories', 0)}", 
+                                          font=("Arial", 12))
+            total_dirs_label.grid(row=0, column=1, sticky="w", padx=10, pady=2)
+            
+            # Row 2
+            total_files_label = ctk.CTkLabel(stats_grid, text=f"Total Files: {stats.get('total_files', 0)}", 
+                                           font=("Arial", 12))
+            total_files_label.grid(row=1, column=0, sticky="w", padx=10, pady=2)
+            
+            interesting_ext_label = ctk.CTkLabel(stats_grid, text=f"Interesting Extensions: {stats.get('interesting_extensions', 0)}", 
+                                              font=("Arial", 12))
+            interesting_ext_label.grid(row=1, column=1, sticky="w", padx=10, pady=2)
+        
+        # Source info
+        if self.processed_data.get("aggregate_source_count") or self.processed_data.get("source_urls"):
+            source_label = ctk.CTkLabel(stats_frame, text=f"Sources: {self.processed_data.get('aggregate_source_count', 0)} URLs", 
                                       font=("Arial", 12))
-            method_label.pack(side="right", padx=10, pady=5)
+            source_label.pack(anchor="w", pady=5, padx=5)
+        
+        # Create button frame
+        button_frame = ctk.CTkFrame(self.processed_scroll)
+        button_frame.pack(fill="x", pady=10, padx=10)
+        
+        # Create a frame to hold the content that will change based on button clicks
+        self.path_content_frame = ctk.CTkFrame(self.processed_scroll)
+        self.path_content_frame.pack(fill="both", expand=True, pady=5, padx=10)
+        
+        # Function to update content based on button click
+        def show_content(content_type):
+            # Clear current content
+            for widget in self.path_content_frame.winfo_children():
+                widget.destroy()
             
-            # Create details frame that starts collapsed
-            details_frame = ctk.CTkFrame(req_frame)
-            details_frame.pack(fill="x", pady=5, padx=10)
-            details_frame.pack_forget()  # Initially hidden
-            
-            # Toggle button
-            def toggle_details(f=details_frame, b=None):
-                if f.winfo_ismapped():
-                    f.pack_forget()
-                    if b:
-                        b.configure(text="Show Parameters")
-                else:
-                    f.pack(fill="x", pady=5, padx=10)
-                    if b:
-                        b.configure(text="Hide Parameters")
-            
-            toggle_button = ctk.CTkButton(req_frame, text="Show Parameters", 
-                                       command=lambda f=details_frame, b=toggle_button: toggle_details(f, b))
-            toggle_button.pack(anchor="w", pady=5, padx=10)
-            
-            # Parameters section
-            if req_data.get("parameters"):
-                # Create table frame for parameters
-                table_frame = ctk.CTkFrame(details_frame)
-                table_frame.pack(fill="x", pady=5)
+            if content_type == "findings":
+                # Create a scrollable frame for findings
+                findings_frame = ctk.CTkScrollableFrame(self.path_content_frame, height=300)
+                findings_frame.pack(fill="both", expand=True, padx=5, pady=5)
                 
-                # Table headers
-                header_frame = ctk.CTkFrame(table_frame, fg_color="#1f538d")
-                header_frame.pack(fill="x", pady=0)
+                # Add header for findings
+                header_frame = ctk.CTkFrame(findings_frame, fg_color="#1f538d")
+                header_frame.pack(fill="x", pady=(0, 5))
                 
-                name_header = ctk.CTkLabel(header_frame, text="Name", font=("Arial", 12, "bold"), width=120)
-                name_header.pack(side="left", padx=5, pady=5)
+                check_url_header = ctk.CTkLabel(header_frame, text="Check URL", font=("Arial", 12, "bold"), width=300)
+                check_url_header.pack(side="left", padx=5, pady=5)
                 
-                value_header = ctk.CTkLabel(header_frame, text="Value", font=("Arial", 12, "bold"), width=300)
-                value_header.pack(side="left", padx=5, pady=5)
+                path_header = ctk.CTkLabel(header_frame, text="Path", font=("Arial", 12, "bold"), width=200)
+                path_header.pack(side="left", padx=5, pady=5)
                 
                 type_header = ctk.CTkLabel(header_frame, text="Type", font=("Arial", 12, "bold"), width=100)
                 type_header.pack(side="left", padx=5, pady=5)
                 
-                # Table rows
-                for param in req_data.get("parameters", []):
-                    row_frame = ctk.CTkFrame(table_frame)
-                    row_frame.pack(fill="x", pady=2)
-                    
-                    name_cell = ctk.CTkLabel(row_frame, text=param.get("name", "Unknown"), width=120, 
-                                          anchor="w", wraplength=110)
-                    name_cell.pack(side="left", padx=5, pady=2)
-                    
-                    value_cell = ctk.CTkLabel(row_frame, text=param.get("value", ""), width=300, 
-                                           anchor="w", wraplength=290)
-                    value_cell.pack(side="left", padx=5, pady=2)
-                    
-                    type_cell = ctk.CTkLabel(row_frame, text=param.get("type", "Unknown"), width=100, 
-                                          anchor="w", wraplength=90)
-                    type_cell.pack(side="left", padx=5, pady=2)
+                # Add findings data
+                if not self.processed_data.get("findings") or len(self.processed_data["findings"]) == 0:
+                    no_findings_label = ctk.CTkLabel(findings_frame, text="No findings available.", font=("Arial", 12))
+                    no_findings_label.pack(pady=10)
+                else:
+                    for finding in self.processed_data.get("findings", []):
+                        finding_frame = ctk.CTkFrame(findings_frame)
+                        finding_frame.pack(fill="x", pady=1)
+                        
+                        # Determine color based on confirmed status
+                        text_color = "#00cc00" if finding.get("confirmed", 0) == 1 else "white"
+                        
+                        check_url_label = ctk.CTkLabel(finding_frame, text=finding.get("check_url", ""), 
+                                                    width=300, anchor="w", wraplength=290, text_color=text_color)
+                        check_url_label.pack(side="left", padx=5, pady=5)
+                        
+                        path_label = ctk.CTkLabel(finding_frame, text=finding.get("path", ""), 
+                                               width=200, anchor="w", wraplength=190, text_color=text_color)
+                        path_label.pack(side="left", padx=5, pady=5)
+                        
+                        type_label = ctk.CTkLabel(finding_frame, text=finding.get("type", ""), 
+                                               width=100, anchor="w", text_color=text_color)
+                        type_label.pack(side="left", padx=5, pady=5)
+                        
+            elif content_type == "directories":
+                # Create a scrollable frame for directories
+                directories_frame = ctk.CTkScrollableFrame(self.path_content_frame, height=300)
+                directories_frame.pack(fill="both", expand=True, padx=5, pady=5)
+                
+                # Add directories data
+                if not self.processed_data.get("directories") or len(self.processed_data["directories"]) == 0:
+                    no_dirs_label = ctk.CTkLabel(directories_frame, text="No directories found.", font=("Arial", 12))
+                    no_dirs_label.pack(pady=10)
+                else:
+                    for directory in self.processed_data.get("directories", []):
+                        dir_frame = ctk.CTkFrame(directories_frame)
+                        dir_frame.pack(fill="x", pady=1)
+                        
+                        dir_label = ctk.CTkLabel(dir_frame, text=directory, font=("Arial", 12),
+                                              wraplength=600, justify="left")
+                        dir_label.pack(anchor="w", padx=10, pady=5)
+            
+            elif content_type == "paths":
+                # Create a scrollable frame for paths
+                paths_frame = ctk.CTkScrollableFrame(self.path_content_frame, height=300)
+                paths_frame.pack(fill="both", expand=True, padx=5, pady=5)
+                
+                # Add paths data
+                if not self.processed_data.get("paths") or len(self.processed_data["paths"]) == 0:
+                    no_paths_label = ctk.CTkLabel(paths_frame, text="No paths found.", font=("Arial", 12))
+                    no_paths_label.pack(pady=10)
+                else:
+                    for path in self.processed_data.get("paths", []):
+                        path_frame = ctk.CTkFrame(paths_frame)
+                        path_frame.pack(fill="x", pady=1)
+                        
+                        path_label = ctk.CTkLabel(path_frame, text=path, font=("Arial", 12),
+                                               wraplength=600, justify="left")
+                        path_label.pack(anchor="w", padx=10, pady=5)
+        
+        # Create buttons
+        findings_button = ctk.CTkButton(button_frame, text="Findings", 
+                                      command=lambda: show_content("findings"))
+        findings_button.pack(side="left", padx=10, pady=10)
+        
+        directories_button = ctk.CTkButton(button_frame, text="Directories", 
+                                         command=lambda: show_content("directories"))
+        directories_button.pack(side="left", padx=10, pady=10)
+        
+        paths_button = ctk.CTkButton(button_frame, text="Paths", 
+                                   command=lambda: show_content("paths"))
+        paths_button.pack(side="left", padx=10, pady=10)
+        
+        # Show findings by default
+        show_content("findings")
+    
+    def render_json_results(self):
+        # Create header
+        header_label = ctk.CTkLabel(self.processed_scroll, text="JSON Analysis Results", font=("Arial", 16, "bold"))
+        header_label.pack(pady=10)
+        
+        # Display summary information if available
+        if self.processed_data.get("title") or self.processed_data.get("description"):
+            summary_frame = ctk.CTkFrame(self.processed_scroll)
+            summary_frame.pack(fill="x", pady=5, padx=10)
+            
+            if self.processed_data.get("title"):
+                title_label = ctk.CTkLabel(summary_frame, text=f"Title: {self.processed_data.get('title')}", 
+                                         font=("Arial", 14, "bold"))
+                title_label.pack(anchor="w", pady=5, padx=10)
+            
+            if self.processed_data.get("description"):
+                desc_label = ctk.CTkLabel(summary_frame, text=f"Description: {self.processed_data.get('description')}", 
+                                        font=("Arial", 12))
+                desc_label.pack(anchor="w", pady=5, padx=10)
+            
+            counts_frame = ctk.CTkFrame(summary_frame)
+            counts_frame.pack(fill="x", pady=5, padx=10)
+            
+            request_count_label = ctk.CTkLabel(counts_frame, 
+                                             text=f"Total Requests: {self.processed_data.get('request_count', 0)}",
+                                             font=("Arial", 12))
+            request_count_label.pack(side="left", padx=10)
+            
+            json_count_label = ctk.CTkLabel(counts_frame, 
+                                          text=f"JSON Requests: {self.processed_data.get('json_request_count', 0)}",
+                                          font=("Arial", 12))
+            json_count_label.pack(side="left", padx=10)
+            
+            param_count_label = ctk.CTkLabel(counts_frame, 
+                                           text=f"Total Parameters: {self.processed_data.get('total_parameters', 0)}",
+                                           font=("Arial", 12))
+            param_count_label.pack(side="left", padx=10)
+        
+        # Create list header frame
+        list_header_frame = ctk.CTkFrame(self.processed_scroll, fg_color="#1f538d")
+        list_header_frame.pack(fill="x", pady=(10, 0), padx=10)
+        
+        index_header = ctk.CTkLabel(list_header_frame, text="Index", font=("Arial", 12, "bold"), width=80)
+        index_header.pack(side="left", padx=5, pady=5)
+        
+        url_header = ctk.CTkLabel(list_header_frame, text="URL", font=("Arial", 12, "bold"), width=500)
+        url_header.pack(side="left", padx=5, pady=5)
+        
+        size_header = ctk.CTkLabel(list_header_frame, text="Size (bytes)", font=("Arial", 12, "bold"), width=100)
+        size_header.pack(side="left", padx=5, pady=5)
+        
+        # Check if there are any debug_info entries
+        if not self.processed_data.get("debug_info") or len(self.processed_data["debug_info"]) == 0:
+            no_data_label = ctk.CTkLabel(self.processed_scroll, text="No request data found.", font=("Arial", 12))
+            no_data_label.pack(pady=10)
+            return
+        
+        # List container frame
+        list_frame = ctk.CTkFrame(self.processed_scroll)
+        list_frame.pack(fill="x", expand=True, pady=0, padx=10)
+        
+        # Display each debug_info entry in a list format
+        for entry in self.processed_data["debug_info"]:
+            entry_frame = ctk.CTkFrame(list_frame)
+            entry_frame.pack(fill="x", pady=1)
+            
+            index_label = ctk.CTkLabel(entry_frame, text=str(entry.get("index", "N/A")), width=80, anchor="w")
+            index_label.pack(side="left", padx=5, pady=5)
+            
+            url_label = ctk.CTkLabel(entry_frame, text=entry.get("url", "Unknown"), width=500, 
+                                   anchor="w", wraplength=490)
+            url_label.pack(side="left", padx=5, pady=5)
+            
+            size_label = ctk.CTkLabel(entry_frame, text=str(entry.get("body_length", 0)), width=100, anchor="e")
+            size_label.pack(side="left", padx=5, pady=5)
     
     def render_default_results(self):
         # Create header
@@ -1280,6 +1743,306 @@ class NavigatorApp:
         data_text.pack(fill="both", expand=True, pady=10, padx=10)
         data_text.insert("1.0", json.dumps(self.processed_data, indent=2))
         data_text.configure(state="disabled")  # Make read-only
+
+    def render_css_results(self):
+        # Create header
+        header_label = ctk.CTkLabel(self.processed_scroll, text="CSS Injection Results", font=("Arial", 16, "bold"))
+        header_label.pack(pady=10)
+        
+        # Display title and description if available
+        if self.processed_data.get("title") or self.processed_data.get("description"):
+            info_frame = ctk.CTkFrame(self.processed_scroll)
+            info_frame.pack(fill="x", pady=5, padx=10)
+            
+            if self.processed_data.get("title"):
+                title_label = ctk.CTkLabel(info_frame, text=f"Title: {self.processed_data.get('title')}", 
+                                         font=("Arial", 14, "bold"))
+                title_label.pack(anchor="w", pady=5, padx=10)
+            
+            if self.processed_data.get("description"):
+                desc_label = ctk.CTkLabel(info_frame, text=f"Description: {self.processed_data.get('description')}", 
+                                        font=("Arial", 12))
+                desc_label.pack(anchor="w", pady=5, padx=10)
+        
+        # Display statistics
+        stats_frame = ctk.CTkFrame(self.processed_scroll)
+        stats_frame.pack(fill="x", pady=5, padx=10)
+        
+        stats_label = ctk.CTkLabel(stats_frame, text="Statistics", font=("Arial", 14, "bold"))
+        stats_label.pack(anchor="w", pady=5, padx=10)
+        
+        stats_grid = ctk.CTkFrame(stats_frame)
+        stats_grid.pack(fill="x", pady=5, padx=10)
+        
+        # Create a grid for stats (2x3)
+        req_count_label = ctk.CTkLabel(stats_grid, 
+                                     text=f"Total Requests: {self.processed_data.get('request_count', 0)}", 
+                                     font=("Arial", 12))
+        req_count_label.grid(row=0, column=0, sticky="w", padx=10, pady=2)
+        
+        vuln_req_label = ctk.CTkLabel(stats_grid, 
+                                    text=f"Requests with Vulnerable Params: {self.processed_data.get('requests_with_vulnerable_params', 0)}", 
+                                    font=("Arial", 12))
+        vuln_req_label.grid(row=0, column=1, sticky="w", padx=10, pady=2)
+        
+        total_vuln_label = ctk.CTkLabel(stats_grid, 
+                                      text=f"Total Vulnerable Params: {self.processed_data.get('total_vulnerable_params', 0)}", 
+                                      font=("Arial", 12))
+        total_vuln_label.grid(row=0, column=2, sticky="w", padx=10, pady=2)
+        
+        # Risk level counts with appropriate colors
+        high_risk_label = ctk.CTkLabel(stats_grid, 
+                                     text=f"High Risk: {self.processed_data.get('high_risk_count', 0)}", 
+                                     font=("Arial", 12), text_color="#ff5555")
+        high_risk_label.grid(row=1, column=0, sticky="w", padx=10, pady=2)
+        
+        medium_risk_label = ctk.CTkLabel(stats_grid, 
+                                       text=f"Medium Risk: {self.processed_data.get('medium_risk_count', 0)}", 
+                                       font=("Arial", 12), text_color="#ffaa55")
+        medium_risk_label.grid(row=1, column=1, sticky="w", padx=10, pady=2)
+        
+        low_risk_label = ctk.CTkLabel(stats_grid, 
+                                    text=f"Low Risk: {self.processed_data.get('low_risk_count', 0)}", 
+                                    font=("Arial", 12), text_color="#55aa55")
+        low_risk_label.grid(row=1, column=2, sticky="w", padx=10, pady=2)
+        
+        # Check if there are any results
+        if not self.processed_data.get("vulnerable_parameters") or len(self.processed_data["vulnerable_parameters"]) == 0:
+            if not self.processed_data.get("requests") or len(self.processed_data["requests"]) == 0:
+                no_data_label = ctk.CTkLabel(self.processed_scroll, text="No vulnerable CSS parameters found.", font=("Arial", 12))
+                no_data_label.pack(pady=10)
+                return
+        
+        # Create tabbed interface for two different views
+        tab_view = ctk.CTkTabview(self.processed_scroll)
+        tab_view.pack(fill="both", expand=True, pady=10, padx=10)
+        
+        # Create tabs
+        param_tab = tab_view.add("Parameters")
+        req_tab = tab_view.add("Requests")
+        
+        # PARAMETERS TAB - CSS Parameters with visual representation
+        if self.processed_data.get("vulnerable_parameters") and len(self.processed_data["vulnerable_parameters"]) > 0:
+            # Create scrollable frame for parameters
+            param_scroll = ctk.CTkScrollableFrame(param_tab)
+            param_scroll.pack(fill="both", expand=True, pady=5, padx=5)
+            
+            # Create visual representation of parameters - CSS specific styling
+            for param_name, param_data in self.processed_data["vulnerable_parameters"].items():
+                # Create a frame for this parameter with styling
+                param_frame = ctk.CTkFrame(param_scroll)
+                param_frame.pack(fill="x", pady=5, padx=5)
+                
+                # Risk level colors
+                risk_color = "#55aa55"  # Low (green)
+                if param_data.get("risk_level") == "high":
+                    risk_color = "#ff5555"  # High (red)
+                elif param_data.get("risk_level") == "medium":
+                    risk_color = "#ffaa55"  # Medium (orange)
+                
+                # CSS-specific styling based on parameter name
+                header_bg = "#2b2b2b"
+                if any(css_term in param_name.lower() for css_term in ["color", "background", "style", "css"]):
+                    header_bg = "#1f3b5c"  # Bluish for style-related
+                elif any(css_term in param_name.lower() for css_term in ["font", "text", "typography"]):
+                    header_bg = "#3b2d4c"  # Purplish for font-related
+                elif any(css_term in param_name.lower() for css_term in ["layout", "margin", "padding", "border"]):
+                    header_bg = "#2d4c2d"  # Greenish for layout-related
+                
+                # Parameter header with custom styling
+                header_frame = ctk.CTkFrame(param_frame, fg_color=header_bg)
+                header_frame.pack(fill="x", pady=0)
+                
+                param_name_label = ctk.CTkLabel(header_frame, text=param_name, font=("Arial", 12, "bold"))
+                param_name_label.pack(side="left", padx=10, pady=5)
+                
+                risk_level = param_data.get("risk_level", "unknown").capitalize()
+                risk_label = ctk.CTkLabel(header_frame, text=f"Risk: {risk_level}", 
+                                        font=("Arial", 12, "bold"), text_color=risk_color)
+                risk_label.pack(side="right", padx=10, pady=5)
+                
+                # Create details frame that starts collapsed
+                details_frame = ctk.CTkFrame(param_frame)
+                details_frame.pack(fill="x", pady=5, padx=10)
+                details_frame.pack_forget()  # Initially hidden
+                
+                # Toggle button
+                def toggle_details(f=details_frame, b=None):
+                    if f.winfo_ismapped():
+                        f.pack_forget()
+                        if b:
+                            b.configure(text="Show Details")
+                    else:
+                        f.pack(fill="x", pady=5, padx=10)
+                        if b:
+                            b.configure(text="Hide Details")
+                
+                toggle_button = ctk.CTkButton(param_frame, text="Show Details", 
+                                           command=lambda f=details_frame, b=toggle_button: toggle_details(f, b))
+                toggle_button.pack(anchor="w", pady=5, padx=10)
+                
+                # Parameter details
+                details_text = f"Occurrences: {param_data.get('count', 0)}"
+                details_label = ctk.CTkLabel(details_frame, text=details_text, font=("Arial", 12))
+                details_label.pack(anchor="w", pady=2)
+                
+                # Risk factors
+                if param_data.get("risk_factors"):
+                    risk_factors_label = ctk.CTkLabel(details_frame, text="Risk Factors:", font=("Arial", 12, "bold"))
+                    risk_factors_label.pack(anchor="w", pady=5)
+                    
+                    for factor in param_data.get("risk_factors", []):
+                        factor_label = ctk.CTkLabel(details_frame, text=f"• {factor}", font=("Arial", 12))
+                        factor_label.pack(anchor="w", padx=10)
+                
+                # Sources
+                if param_data.get("sources"):
+                    sources_label = ctk.CTkLabel(details_frame, text="Sources:", font=("Arial", 12, "bold"))
+                    sources_label.pack(anchor="w", pady=5)
+                    
+                    sources_text = ", ".join(param_data.get("sources", []))
+                    source_label = ctk.CTkLabel(details_frame, text=sources_text, font=("Arial", 12))
+                    source_label.pack(anchor="w", padx=10)
+                
+                # Values preview
+                if param_data.get("values"):
+                    values_label = ctk.CTkLabel(details_frame, text="Sample Values:", font=("Arial", 12, "bold"))
+                    values_label.pack(anchor="w", pady=5)
+                    
+                    # Create a special presentation for CSS values
+                    for value in param_data.get("values", [])[:3]:  # Show up to 3 values
+                        value_frame = ctk.CTkFrame(details_frame)
+                        value_frame.pack(fill="x", pady=2, padx=10)
+                        
+                        value_label = ctk.CTkLabel(value_frame, text=value, font=("Arial", 12))
+                        value_label.pack(anchor="w", pady=2)
+                    
+                    if len(param_data.get("values", [])) > 3:
+                        more_label = ctk.CTkLabel(details_frame, 
+                                               text=f"... and {len(param_data.get('values', [])) - 3} more", 
+                                               font=("Arial", 12, "italic"))
+                        more_label.pack(anchor="w", padx=10)
+        else:
+            no_params_label = ctk.CTkLabel(param_tab, text="No vulnerable CSS parameters found.", font=("Arial", 12))
+            no_params_label.pack(pady=10)
+        
+        # REQUESTS TAB - Tabular list of affected requests
+        if self.processed_data.get("requests") and len(self.processed_data["requests"]) > 0:
+            # Create scrollable frame for requests
+            req_scroll = ctk.CTkScrollableFrame(req_tab)
+            req_scroll.pack(fill="both", expand=True, pady=5, padx=5)
+            
+            # Create list header
+            header_frame = ctk.CTkFrame(req_scroll, fg_color="#1f538d")
+            header_frame.pack(fill="x", pady=(0, 5))
+            
+            index_header = ctk.CTkLabel(header_frame, text="Index", font=("Arial", 12, "bold"), width=60)
+            index_header.pack(side="left", padx=5, pady=5)
+            
+            method_header = ctk.CTkLabel(header_frame, text="Method", font=("Arial", 12, "bold"), width=80)
+            method_header.pack(side="left", padx=5, pady=5)
+            
+            url_header = ctk.CTkLabel(header_frame, text="URL", font=("Arial", 12, "bold"), width=400)
+            url_header.pack(side="left", padx=5, pady=5)
+            
+            params_header = ctk.CTkLabel(header_frame, text="Vulnerable Params", font=("Arial", 12, "bold"), width=100)
+            params_header.pack(side="left", padx=5, pady=5)
+            
+            # Add items to the list
+            for req in self.processed_data.get("requests", []):
+                row_frame = ctk.CTkFrame(req_scroll)
+                row_frame.pack(fill="x", pady=1)
+                
+                index_label = ctk.CTkLabel(row_frame, text=str(req.get("index", "")), width=60)
+                index_label.pack(side="left", padx=5, pady=5)
+                
+                method_label = ctk.CTkLabel(row_frame, text=req.get("method", "GET"), width=80)
+                method_label.pack(side="left", padx=5, pady=5)
+                
+                url_label = ctk.CTkLabel(row_frame, text=req.get("url", ""), width=400, 
+                                       anchor="w", wraplength=390)
+                url_label.pack(side="left", padx=5, pady=5)
+                
+                params_label = ctk.CTkLabel(row_frame, text=str(req.get("vulnerable_param_count", 0)), width=100)
+                params_label.pack(side="left", padx=5, pady=5)
+                
+                # Create details frame that starts collapsed
+                details_frame = ctk.CTkFrame(req_scroll)
+                details_frame.pack(fill="x", pady=2, padx=20)
+                details_frame.pack_forget()  # Initially hidden
+                
+                # Toggle button
+                def toggle_details(f=details_frame, b=None, r=row_frame):
+                    if f.winfo_ismapped():
+                        f.pack_forget()
+                        if b:
+                            b.configure(text="➕")
+                        if r:
+                            r.configure(fg_color=("gray90", "gray10"))
+                    else:
+                        f.pack(fill="x", pady=2, padx=20, after=r)
+                        if b:
+                            b.configure(text="➖")
+                        if r:
+                            r.configure(fg_color=("gray80", "gray20"))
+                
+                details_button = ctk.CTkButton(row_frame, text="➕", width=30, height=20,
+                                            command=lambda f=details_frame, b=None, r=row_frame: toggle_details(f, b, r))
+                details_button.pack(side="right", padx=5)
+                
+                # Only add parameter details if there are parameters
+                if req.get("parameters") and len(req.get("parameters", [])) > 0:
+                    # Create a table for the parameters
+                    param_table_frame = ctk.CTkFrame(details_frame)
+                    param_table_frame.pack(fill="x", pady=5)
+                    
+                    # Add parameter headers
+                    param_header_frame = ctk.CTkFrame(param_table_frame, fg_color="#1f538d")
+                    param_header_frame.pack(fill="x", pady=0)
+                    
+                    param_name_header = ctk.CTkLabel(param_header_frame, text="Name", font=("Arial", 12, "bold"), width=120)
+                    param_name_header.pack(side="left", padx=5, pady=2)
+                    
+                    param_source_header = ctk.CTkLabel(param_header_frame, text="Source", font=("Arial", 12, "bold"), width=80)
+                    param_source_header.pack(side="left", padx=5, pady=2)
+                    
+                    param_value_header = ctk.CTkLabel(param_header_frame, text="Value", font=("Arial", 12, "bold"), width=200)
+                    param_value_header.pack(side="left", padx=5, pady=2)
+                    
+                    param_risk_header = ctk.CTkLabel(param_header_frame, text="Risk", font=("Arial", 12, "bold"), width=80)
+                    param_risk_header.pack(side="left", padx=5, pady=2)
+                    
+                    # Add parameter rows
+                    for param in req.get("parameters", []):
+                        param_row_frame = ctk.CTkFrame(param_table_frame)
+                        param_row_frame.pack(fill="x", pady=1)
+                        
+                        # Risk level colors
+                        risk_color = "#55aa55"  # Low (green)
+                        if param.get("risk_level") == "high":
+                            risk_color = "#ff5555"  # High (red)
+                        elif param.get("risk_level") == "medium":
+                            risk_color = "#ffaa55"  # Medium (orange)
+                        
+                        param_name_label = ctk.CTkLabel(param_row_frame, text=param.get("name", ""), 
+                                                     width=120, anchor="w", wraplength=110)
+                        param_name_label.pack(side="left", padx=5, pady=2)
+                        
+                        param_source_label = ctk.CTkLabel(param_row_frame, text=param.get("source", ""), 
+                                                       width=80, anchor="w")
+                        param_source_label.pack(side="left", padx=5, pady=2)
+                        
+                        param_value_label = ctk.CTkLabel(param_row_frame, text=param.get("value", ""), 
+                                                      width=200, anchor="w", wraplength=190)
+                        param_value_label.pack(side="left", padx=5, pady=2)
+                        
+                        risk_level = param.get("risk_level", "unknown").capitalize()
+                        param_risk_label = ctk.CTkLabel(param_row_frame, text=risk_level, 
+                                                     width=80, text_color=risk_color)
+                        param_risk_label.pack(side="left", padx=5, pady=2)
+        else:
+            no_reqs_label = ctk.CTkLabel(req_tab, text="No requests with vulnerable CSS parameters found.", font=("Arial", 12))
+            no_reqs_label.pack(pady=10)
 
 def main():
     parser = argparse.ArgumentParser(description='Security Testing Directory Navigator (Offline GUI)')
