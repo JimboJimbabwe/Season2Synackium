@@ -334,6 +334,7 @@ TEST_PROCESSORS = {
     "Sensitive Directory_File Contents Disclosed": process_sensitive_info,
     "Path Traversal": process_path_finder,
     "JSON Injection": process_json_results,
+    "CSS Injection": process_css_results,
     # Default fallback processor
     "default": lambda data: data
 }
@@ -820,6 +821,8 @@ class NavigatorApp:
             self.render_path_finder_results()
         elif self.current_test_type == "JSON Injection":
             self.render_json_results()
+        elif self.current_test_type == "CSS Injection":
+            self.render_css_results()
         else:
             # Default renderer
             self.render_default_results()
