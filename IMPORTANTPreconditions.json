@@ -1,0 +1,464 @@
+{
+  "categories": [
+    {
+      "name": "Authentication/Session Management",
+      "flaws": [
+        {
+          "name": "2FA Auth Bypass",
+          "shorthand": "No secondary verification channel",
+          "description": "If there's no secondary verification channel (SMS, app, email) for critical actions or the 2FA implementation uses the same session for both factors, then this vector is unlikely."
+        },
+        {
+          "name": "Account Enum",
+          "shorthand": "Consistent error messages and timing",
+          "description": "If error messages are standardized regardless of input validity and response timing is consistent, this vulnerability is improbable."
+        },
+        {
+          "name": "Cookie Flaws",
+          "shorthand": "Proper cookie security attributes",
+          "description": "If all cookies use secure, httpOnly flags, with proper SameSite attributes and the application implements proper cookie scope, these flaws are less likely."
+        },
+        {
+          "name": "Credential/Session Prediction",
+          "shorthand": "Strong entropy for session generation",
+          "description": "If strong entropy sources are used for session generation and tokens have sufficient length (128+ bits), prediction attacks are impractical."
+        },
+        {
+          "name": "Default Creds Admin",
+          "shorthand": "Enforced credential change at setup",
+          "description": "If the application enforces password changes during installation/setup and has strong password policies, default credential risks are minimal."
+        },
+        {
+          "name": "Default Creds Non-Admin",
+          "shorthand": "Enforced credential change at setup",
+          "description": "If the application enforces password changes during installation/setup and has strong password policies, default credential risks are minimal."
+        },
+        {
+          "name": "Email Pass Recovery Flaw",
+          "shorthand": "Multi-factor recovery process",
+          "description": "If password recovery requires multiple verification steps (not just email) and has rate limiting with proper account lockout, these flaws are unlikely."
+        },
+        {
+          "name": "Login Authentication Bypass",
+          "shorthand": "Centralized authentication logic",
+          "description": "If authentication logic is centralized (not duplicated across endpoints) and proper framework-level authentication is implemented, bypasses are rare."
+        },
+        {
+          "name": "SSO Auth bypass",
+          "shorthand": "Proper token validation and signing",
+          "description": "If proper token validation and signing occurs with consistent identity assertion checking across services, SSO bypasses are unlikely."
+        },
+        {
+          "name": "Session Fixation",
+          "shorthand": "Token regeneration after auth events",
+          "description": "If session tokens are regenerated after authentication events and sessions are properly tied to client fingerprinting, fixation is difficult."
+        },
+        {
+          "name": "Step Up auth bypass",
+          "shorthand": "Consistent re-auth for privileged actions",
+          "description": "If the application requires re-authentication for all privileged actions and properly validates elevated session status, step-up auth bypasses are unlikely."
+        }
+      ]
+    },
+    {
+      "name": "Access Control Violation",
+      "flaws": [
+        {
+          "name": "Unauthenticated user read/access non-admin user data",
+          "shorthand": "API-level authorization checks",
+          "description": "If applications implement consistent authorization checks at API gateways (not just at the UI level) and have role-based access control systems, these issues are less probable."
+        },
+        {
+          "name": "Unauthenticated user read/write OR Write ONLY",
+          "shorthand": "API-level authorization checks",
+          "description": "If applications implement consistent authorization checks at API gateways (not just at the UI level) and have role-based access control systems, these issues are less probable."
+        },
+        {
+          "name": "Unauth, or self-made, reading accessing data/functions that are only designed for admins",
+          "shorthand": "Isolated admin functions",
+          "description": "If admin functions are isolated to separate API endpoints/services with additional security layers beyond regular authentication, unauthorized access becomes much harder."
+        },
+        {
+          "name": "Unauth, or self-made, read/write OR WRITE ONLY data/functions that are only designed for admins",
+          "shorthand": "Isolated admin functions",
+          "description": "If admin functions are isolated to separate API endpoints/services with additional security layers beyond regular authentication, unauthorized access becomes much harder."
+        }
+      ]
+    },
+    {
+      "name": "Authorization/Permissions",
+      "flaws": [
+        {
+          "name": "File Inclusion",
+          "shorthand": "No file paths in parameters",
+          "description": "If the application doesn't accept file paths as parameters or uses strict whitelisting for file references, file inclusion vulnerabilities are unlikely."
+        },
+        {
+          "name": "Read Only IDOR",
+          "shorthand": "Unpredictable resource identifiers",
+          "description": "If UUIDs or unpredictable tokens (not sequential IDs) are used for resources and there's proper authorization checking, IDOR vulnerabilities become impractical."
+        },
+        {
+          "name": "Read and Write IDOR",
+          "shorthand": "Unpredictable resource identifiers",
+          "description": "If UUIDs or unpredictable tokens (not sequential IDs) are used for resources and there's proper authorization checking, IDOR vulnerabilities become impractical."
+        },
+        {
+          "name": "Path Traversal",
+          "shorthand": "Framework-provided file access",
+          "description": "If the application uses framework-provided file access functions (not raw file operations) and doesn't accept user-controlled paths, path traversal is unlikely."
+        },
+        {
+          "name": "SSRF Full",
+          "shorthand": "Egress filtering and URL validation",
+          "description": "If egress filtering is implemented, internal DNS isn't resolvable externally, and URL parameters undergo strict validation and whitelisting, SSRF becomes difficult."
+        },
+        {
+          "name": "SSRF Limited",
+          "shorthand": "Egress filtering and URL validation",
+          "description": "If egress filtering is implemented, internal DNS isn't resolvable externally, and URL parameters undergo strict validation and whitelisting, SSRF becomes difficult."
+        }
+      ]
+    },
+    {
+      "name": "Brute Force",
+      "flaws": [
+        {
+          "name": "Bypass Lack of Rate Limiting Protections",
+          "shorthand": "Infrastructure-level rate limiting",
+          "description": "If rate limiting is implemented at the infrastructure level (not just application code) and uses multiple factors beyond IP (account, device fingerprint), bypasses are unlikely."
+        },
+        {
+          "name": "Admin Login Creds",
+          "shorthand": "Progressive delays and lockouts",
+          "description": "If the application has progressive delays, account lockout policies, and requires high-entropy passwords, brute force attacks are impractical."
+        },
+        {
+          "name": "User Login Credentials",
+          "shorthand": "Progressive delays and lockouts",
+          "description": "If the application has progressive delays, account lockout policies, and requires high-entropy passwords, brute force attacks are impractical."
+        }
+      ]
+    },
+    {
+      "name": "Content Injection",
+      "flaws": [
+        {
+          "name": "CSS Injection",
+          "shorthand": "Context-specific encoding and CSP",
+          "description": "If the application uses proper encoding functions specific to each context and has Content Security Policy properly implemented, these injections are unlikely."
+        },
+        {
+          "name": "HTTP Parameter Pollution",
+          "shorthand": "Parameter validation and normalization",
+          "description": "If the application correctly handles multiple parameters with the same name and normalizes inputs before processing, parameter pollution attacks are less effective."
+        },
+        {
+          "name": "HTTP Response Splitting",
+          "shorthand": "Output encoding for HTTP headers",
+          "description": "If the application properly encodes output used in HTTP headers and filters CR/LF characters, response splitting vulnerabilities are unlikely."
+        },
+        {
+          "name": "JSON Injection",
+          "shorthand": "Context-specific encoding and CSP",
+          "description": "If the application uses proper encoding functions specific to each context and has Content Security Policy properly implemented, these injections are unlikely."
+        },
+        {
+          "name": "LDAP Injection",
+          "shorthand": "Parameterized LDAP queries",
+          "description": "If parameterized queries are used consistently and input is properly sanitized before reaching the respective interpreters, these injections are improbable."
+        },
+        {
+          "name": "ORM Injection",
+          "shorthand": "Parameterized ORM queries",
+          "description": "If parameterized queries are used consistently and input is properly sanitized before reaching the respective interpreters, these injections are improbable."
+        },
+        {
+          "name": "Server-Side Includes Injection",
+          "shorthand": "SSI disabled or strictly limited",
+          "description": "If Server-Side Includes are disabled in the production environment or strictly limited to non-user-controllable content, SSI injection vulnerabilities are mitigated."
+        },
+        {
+          "name": "HTML Spoof",
+          "shorthand": "Content-Type and X-Content-Type-Options headers",
+          "description": "If proper Content-Type headers are set with X-Content-Type-Options: nosniff, and user uploads are stored on separate domains, HTML spoofing attacks are less effective."
+        },
+        {
+          "name": "XML External Entity Full",
+          "shorthand": "XML parsers with entities disabled",
+          "description": "If XML parsers are configured to disable external entities by default and DTD processing is disabled, XXE vulnerabilities won't exist."
+        },
+        {
+          "name": "XML External Entity Limited",
+          "shorthand": "XML parsers with entities disabled",
+          "description": "If XML parsers are configured to disable external entities by default and DTD processing is disabled, XXE vulnerabilities won't exist."
+        },
+        {
+          "name": "XPath/XQuery Injection",
+          "shorthand": "Parameterized XPath queries",
+          "description": "If the application uses parameterized XPath/XQuery or input validation before constructing queries, these injection vulnerabilities are unlikely."
+        }
+      ]
+    },
+    {
+      "name": "Cross Site Scripting XSS",
+      "flaws": [
+        {
+          "name": "Blind XSS",
+          "shorthand": "CSP and template auto-escaping",
+          "description": "If the application implements proper Content-Security-Policy headers, uses framework-level output encoding, and employs template systems that auto-escape output, XSS becomes much less likely."
+        },
+        {
+          "name": "DOM Based XSS",
+          "shorthand": "Avoiding unsafe JS sinks",
+          "description": "If the application avoids passing data to unsafe JavaScript sinks (innerHTML, eval, document.write) and sanitizes data before DOM manipulation, DOM XSS is unlikely."
+        },
+        {
+          "name": "Persistent XSS",
+          "shorthand": "CSP and template auto-escaping",
+          "description": "If the application implements proper Content-Security-Policy headers, uses framework-level output encoding, and employs template systems that auto-escape output, XSS becomes much less likely."
+        },
+        {
+          "name": "Reflected XSS",
+          "shorthand": "CSP and template auto-escaping",
+          "description": "If the application implements proper Content-Security-Policy headers, uses framework-level output encoding, and employs template systems that auto-escape output, XSS becomes much less likely."
+        },
+        {
+          "name": "Reflected-DOM XSS",
+          "shorthand": "CSP and avoiding unsafe JS sinks",
+          "description": "If the application implements strong Content-Security-Policy and avoids transferring user input directly to DOM manipulation functions, reflected-DOM XSS is unlikely."
+        }
+      ]
+    },
+    {
+      "name": "CSRF",
+      "flaws": [
+        {
+          "name": "High",
+          "shorthand": "Anti-CSRF tokens for state changes",
+          "description": "If the application uses proper anti-CSRF tokens for all state-changing operations and verifies the Origin/Referer headers, CSRF attacks are impractical."
+        },
+        {
+          "name": "Low",
+          "shorthand": "Anti-CSRF tokens for state changes",
+          "description": "If the application uses proper anti-CSRF tokens for all state-changing operations and verifies the Origin/Referer headers, CSRF attacks are impractical."
+        }
+      ]
+    },
+    {
+      "name": "Cryptography",
+      "flaws": [
+        {
+          "name": "Cryptographic Implementation Flaw",
+          "shorthand": "Standard crypto libraries",
+          "description": "If the application uses standard crypto libraries (not custom implementations) and keeps them updated, these flaws are less common."
+        },
+        {
+          "name": "Encrypted Information Compromised",
+          "shorthand": "Proper key management systems",
+          "description": "If proper key management systems are in place with appropriate key rotation policies, compromise is much less likely."
+        },
+        {
+          "name": "Weak Ciphers Used",
+          "shorthand": "Standard crypto libraries",
+          "description": "If the application uses standard crypto libraries (not custom implementations) and keeps them updated, these flaws are less common."
+        }
+      ]
+    },
+    {
+      "name": "Functional/Business Logic",
+      "flaws": [
+        {
+          "name": "Client Side Validation",
+          "shorthand": "Duplicate server-side validation",
+          "description": "If all validation is duplicated server-side (not just client-side) and the application doesn't trust client-supplied data, these issues are minimized."
+        },
+        {
+          "name": "Functionality Abuse with Malicious Impact",
+          "shorthand": "Rate limiting and abuse detection",
+          "description": "If the application implements rate limiting, anomaly detection, and has proper monitoring for abuse patterns, functionality abuse with malicious impact is more difficult."
+        },
+        {
+          "name": "Improper Input Validation",
+          "shorthand": "Centralized validation framework",
+          "description": "If the application uses a centralized input validation framework applied consistently across all endpoints, improper input validation issues are less common."
+        },
+        {
+          "name": "Insecure Deserialization",
+          "shorthand": "Secure serialization formats",
+          "description": "If the application uses secure serialization formats (not Java ObjectInputStream or PHP unserialize) or implements proper type checking, these vulnerabilities are unlikely."
+        },
+        {
+          "name": "Unrestricted File Upload",
+          "shorthand": "Multi-layer upload validation",
+          "description": "If the application implements content-type validation, file extension validation, AND server-side processing of files (not just client checks), this vulnerability is less likely."
+        },
+        {
+          "name": "Unvalidated Redirect Bypass",
+          "shorthand": "Whitelisted redirect destinations",
+          "description": "If redirect destinations are strictly whitelisted or use signed/encrypted parameters that prevent tampering, unvalidated redirect bypasses are unlikely."
+        },
+        {
+          "name": "Unvalidated Redirect",
+          "shorthand": "Whitelisted redirect destinations",
+          "description": "If redirect destinations are strictly whitelisted or use signed/encrypted parameters that prevent tampering, unvalidated redirect bypasses are unlikely."
+        }
+      ]
+    },
+    {
+      "name": "Information Disclosure",
+      "flaws": [
+        {
+          "name": "Directory Contents Disclosed",
+          "shorthand": "Directory listing disabled",
+          "description": "If proper error handling suppresses stack traces and file paths, and web servers have directory listing disabled, these disclosures are unlikely."
+        },
+        {
+          "name": "Directory Structure enumeration",
+          "shorthand": "Custom 404 pages and access controls",
+          "description": "If the application uses custom error pages that don't leak path information and implements consistent access controls for all resources, structure enumeration is more difficult."
+        },
+        {
+          "name": "Identity of Network Topology",
+          "shorthand": "Stripped headers and error messages",
+          "description": "If HTTP headers are sanitized to remove server information and error messages don't reveal network details, topology information disclosures are unlikely."
+        },
+        {
+          "name": "Identity of Software Architecture",
+          "shorthand": "Stripped headers and error messages",
+          "description": "If HTTP headers are sanitized to remove software/framework information and error messages don't reveal implementation details, architecture information disclosures are unlikely."
+        },
+        {
+          "name": "Sensitive Client Information Disclosed",
+          "shorthand": "Proper data classification and controls",
+          "description": "If a proper secrets management solution is implemented and sensitive data is classified with appropriate controls, these disclosures become less probable."
+        },
+        {
+          "name": "Sensitive Directory/File Contents Disclosed",
+          "shorthand": "Proper access controls and error handling",
+          "description": "If access controls are consistently implemented and error handling doesn't reveal sensitive paths or contents, these disclosures are unlikely."
+        },
+        {
+          "name": "Sensitive Information Leak to Third-Parties",
+          "shorthand": "Data minimization and sandboxing",
+          "description": "If the application follows data minimization principles and properly sandboxes third-party components, sensitive information leaks to third parties are less likely."
+        },
+        {
+          "name": "Service Version Disclosed",
+          "shorthand": "Stripped headers and banners",
+          "description": "If HTTP headers, error pages, and login banners are configured to not reveal version information, service version disclosures are unlikely."
+        },
+        {
+          "name": "Software Version Disclosed",
+          "shorthand": "Stripped headers and banners",
+          "description": "If HTTP headers, error pages, and login banners are configured to not reveal version information, software version disclosures are unlikely."
+        }
+      ]
+    },
+    {
+      "name": "Insufficient TLS/SSL",
+      "flaws": [
+        {
+          "name": "Best Practices not enforced",
+          "shorthand": "Automated TLS configuration testing",
+          "description": "If TLS configuration is regularly tested with automated tools and updated to follow current best practices, TLS/SSL issues are less common."
+        }
+      ]
+    },
+    {
+      "name": "RCE",
+      "flaws": [
+        {
+          "name": "Remote Code Execution",
+          "shorthand": "No dangerous functions with user input",
+          "description": "If the application doesn't use dangerous functions (eval, system, exec) with user input and implements proper input validation, RCE vulnerabilities are rare."
+        }
+      ]
+    },
+    {
+      "name": "SQL Injection",
+      "flaws": [
+        {
+          "name": "SQL Injection",
+          "shorthand": "Parameterized queries and ORM",
+          "description": "If the application uses parameterized queries consistently and ORM frameworks with proper parameter binding, SQLi is unlikely."
+        }
+      ]
+    },
+    {
+      "name": "Server/Application Misconfiguration",
+      "flaws": [
+        {
+          "name": "Application Level Protection",
+          "shorthand": "Security-focused configuration management",
+          "description": "If the application uses infrastructure-as-code with security-focused configuration management and regular auditing, application-level protection misconfigurations are less common."
+        },
+        {
+          "name": "Cache Directives",
+          "shorthand": "Consistent cache-control headers",
+          "description": "If proper cache-control headers are set consistently and sensitive endpoints are properly marked as non-cacheable, cache-related vulnerabilities are unlikely."
+        },
+        {
+          "name": "Cache Poisoning",
+          "shorthand": "Consistent cache-control headers",
+          "description": "If proper cache-control headers are set consistently and sensitive endpoints are properly marked as non-cacheable, cache-related vulnerabilities are unlikely."
+        },
+        {
+          "name": "CORS Issue",
+          "shorthand": "Specific origins, no credential wildcards",
+          "description": "If CORS policies use specific origins (not wildcards) and credentials aren't allowed for untrusted origins, CORS vulnerabilities are minimized."
+        },
+        {
+          "name": "DNS Misconfiguration",
+          "shorthand": "Network segmentation beyond DNS",
+          "description": "If infrastructure uses proper network segmentation and critical systems don't depend solely on DNS for security, these misconfigurations are less impactful."
+        },
+        {
+          "name": "HTTP Request/Response Smuggling",
+          "shorthand": "Consistent header parsing rules",
+          "description": "If all proxy/load balancer/web server components have consistent HTTP header parsing rules and are regularly updated, request/response smuggling vulnerabilities are less likely."
+        },
+        {
+          "name": "Host Level Protection",
+          "shorthand": "Hardened server configurations",
+          "description": "If servers are deployed from hardened images with minimal attack surface and regular patching, host-level protection issues are less common."
+        },
+        {
+          "name": "Improper File System Permissions",
+          "shorthand": "Least-privilege file permissions",
+          "description": "If file system permissions follow the principle of least privilege and are regularly audited, improper file system permission vulnerabilities are unlikely."
+        },
+        {
+          "name": "Insecure Data Storage",
+          "shorthand": "Encrypted storage for sensitive data",
+          "description": "If sensitive data is always encrypted at rest and proper key management is implemented, insecure data storage vulnerabilities are minimized."
+        },
+        {
+          "name": "Open Mail Relay",
+          "shorthand": "Authenticated SMTP only",
+          "description": "If mail servers require authentication for all relay operations and implement IP-based restrictions, open mail relay vulnerabilities won't exist."
+        },
+        {
+          "name": "SSL Pinning Bypass",
+          "shorthand": "Multiple pinning verification methods",
+          "description": "If the application implements multiple certificate validation methods beyond just pinning and uses obfuscation for pinning logic, SSL pinning bypasses are more difficult."
+        },
+        {
+          "name": "Security HTTP Headers",
+          "shorthand": "Framework-enforced security headers",
+          "description": "If security headers are implemented at the framework/infrastructure level (not ad hoc) and regularly tested, security HTTP header issues are less common."
+        },
+        {
+          "name": "DNS Zone/Subdomain Takeover",
+          "shorthand": "Regular DNS auditing",
+          "description": "If DNS records are regularly audited for stale entries and proper ownership verification is required for subdomain creation, zone/subdomain takeover vulnerabilities are unlikely."
+        },
+        {
+          "name": "Use of known vulnerable software",
+          "shorthand": "Dependency scanning and patching",
+          "description": "If the application implements automated dependency scanning with immediate patching for critical vulnerabilities, use of known vulnerable software is minimized."
+        }
+      ]
+    }
+  ]
+}
