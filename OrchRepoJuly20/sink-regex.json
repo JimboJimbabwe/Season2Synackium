@@ -1,0 +1,87 @@
+{
+  "GeneralOrder": {
+    "Initialization": {
+      "Construction": {
+        "Regex": "(?<!['\"`][^'`\"]*)\bnew\s+(WebSocket|Function|RegExp)\b\s*\(",
+        "Matches": []
+      },
+      "ObjectPropertyDefinition": {
+        "Regex": "(?<!['\"`][^'`\"]*)\b(innerHTML|outerHTML|document\.(?:cookie|write|writeln|domain|title|evaluate)|location(?:\.(?:href|host|hostname|pathname|search|protocol))?|script\.(?:src|text|textContent|innerText)|element\.(?:href|src|action|text|textContent|innerText|outerText|value|name|target|method|type|backgroundImage|cssText|codebase|srcdoc|search))\s*[:=]\s*[^;]*|Object\.defineProperty\s*\(\s*[^\)]+\s*,\s*['\"](innerHTML|outerHTML|document\.(?:cookie|write|writeln|domain|title|evaluate)|location(?:\.(?:href|host|hostname|pathname|search|protocol))?|script\.(?:src|text|textContent|innerText)|element\.(?:href|src|action|text|textContent|innerText|outerText|value|name|target|method|type|backgroundImage|cssText|codebase|srcdoc|search))['\"]",
+        "Matches": []
+      },
+      "DataStorage": {
+        "Regex": "(?<!['\"`][^'`\"]*)\b(sessionStorage|localStorage)\.setItem\s*\(",
+        "Matches": []
+      }
+    },
+    "Manipulation": {
+      "Assignment": {
+        "Regex": "(?<!['\"`][^'`\"]*)\b(innerHTML|outerHTML|document\.(?:cookie|write|writeln|domain|title)|location(?:\.(?:href|host|hostname|pathname|search|protocol))?|script\.(?:src|text|textContent|innerText)|element\.(?:href|src|action|text|textContent|innerText|outerText|value|name|target|method|type|backgroundImage|cssText|codebase|srcdoc|search))\s*=",
+        "Matches": []
+      },
+      "DOMMutation": {
+        "Regex": "(?<!['\"`][^'`\"]*)\b(document\.(?:write|writeln)|element\.setAttribute|history\.(?:pushState|replaceState)|range\.createContextualFragment|document\.implementation\.createHTMLDocument)\s*\(",
+        "Matches": []
+      },
+      "DynamicPropertyAccess": {
+        "Regex": "(?<!['\"`][^'`\"]*)\[\s*['\"](innerHTML|outerHTML|document\.(?:cookie|write|writeln|domain|title)|location(?:\.(?:href|host|hostname|pathname|search|protocol))?|script\.(?:src|text|textContent|innerText)|element\.(?:href|src|action|text|textContent|innerText|outerText|value|name|target|method|type|backgroundImage|cssText|codebase|srcdoc|search))['\"]\s*\]",
+        "Matches": []
+      }
+    },
+    "Processing": {
+      "Read": {
+        "Regex": "(?<!['\"`][^'`\"]*)\b(let|const|var)\s+\w+\s*=\s*(innerHTML|outerHTML|document\.(?:cookie|title)|location(?:\.(?:href|host|hostname|pathname|search|protocol))?|script\.(?:src|text|textContent|innerText)|element\.(?:href|src|action|text|textContent|innerText|outerText|value|name|target|method|type|backgroundImage|cssText|codebase|srcdoc|search)|sessionStorage\.getItem|localStorage\.getItem)\b",
+        "Matches": []
+      },
+      "ConditionalUse": {
+        "Regex": "(?<!['\"`][^'`\"]*)\bif\s*\([^)]*(innerHTML|outerHTML|document\.(?:cookie|title)|location(?:\.(?:href|host|hostname|pathname|search|protocol))?|script\.(?:src|text|textContent|innerText)|element\.(?:href|src|action|text|textContent|innerText|outerText|value|name|target|method|type|backgroundImage|cssText|codebase|srcdoc|search)|sessionStorage\.getItem|localStorage\.getItem)\b[^)]*\)",
+        "Matches": []
+      },
+      "FunctionArgument": {
+        "Regex": "(?<!['\"`][^'`\"]*)\b\w+\s*\([^)]*(innerHTML|outerHTML|document\.(?:cookie|title)|location(?:\.(?:href|host|hostname|pathname|search|protocol))?|script\.(?:src|text|textContent|innerText)|element\.(?:href|src|action|text|textContent|innerText|outerText|value|name|target|method|type|backgroundImage|cssText|codebase|srcdoc|search)|sessionStorage\.getItem|localStorage\.getItem)\b[^)]*\)",
+        "Matches": []
+      },
+      "TemplateLiteralInterpolation": {
+        "Regex": "`[^`]*\b(innerHTML|document\.(?:write|writeln)|eval)\b[^`]*`",
+        "Matches": []
+      }
+    },
+    "Execution": {
+      "MethodInvocation": {
+        "Regex": "(?<!['\"`][^'`\"]*)\b(eval|set(?:Timeout|Interval|Immediate)|msSetImmediate|exec(?:Command|Script)|document\.(?:write|writeln)|location\.(?:assign|replace)|open|postMessage|XMLHttpRequest\.(?:open|send|setRequestHeader)|jQuery\.(?:ajax|globalEval)|[$]\.(?:ajax|globalEval|parseJSON)|range\.createContextualFragment|crypto\.generateCRMFRequest|FileReader\.readAs(?:ArrayBuffer|BinaryString|DataURL|Text|File)|FileReader\.root\.getFile|document\.evaluate|element\.evaluate|executeSql|history\.(?:pushState|replaceState)|requestFileSystem)\s*\(",
+        "Matches": []
+      },
+      "PatternBasedExecution": {
+        "Regex": "(?<!['\"`][^'`\"]*)\b(RegExp|document\.evaluate)\s*\(",
+        "Matches": []
+      },
+      "EventHandlerBinding": {
+        "Regex": "(?<!['\"`][^'`\"]*)\b(on(?:click|error|load|submit)|addEventListener)\s*(?:=|\()",
+        "Matches": []
+      }
+    },
+    "SpecialCases": {
+      "AsynchronousFlow": {
+        "Regex": "(?<!['\"`][^'`\"]*)\b(Promise|async\s+function)\b.*?(innerHTML|outerHTML|document\.(?:cookie|write|writeln|domain|title|evaluate)|location(?:\.(?:href|host|hostname|pathname|search|protocol|assign|replace))?|open|set(?:Timeout|Interval|Immediate)|msSetImmediate|eval|Function|exec(?:Command|Script)|range\.createContextualFragment|crypto\.generateCRMFRequest|WebSocket|(?:element|script)\.(?:href|src|action|text|textContent|innerText|outerText|value|name|target|method|type|backgroundImage|cssText|codebase|srcdoc|search)|postMessage|XMLHttpRequest\.(?:open|send|setRequestHeader)|jQuery\.(?:ajax|globalEval)|[$]\.(?:ajax|globalEval|parseJSON)|FileReader\.readAs(?:ArrayBuffer|BinaryString|DataURL|Text|File)|FileReader\.root\.getFile|sessionStorage\.setItem|localStorage\.setItem|history\.(?:pushState|replaceState)|RegExp|requestFileSystem|executeSql|element\.evaluate)\b",
+        "Matches": []
+      },
+      "ErrorHandling": {
+        "Regex": "(?<!['\"`][^'`\"]*)\btry\b.*?(innerHTML|outerHTML|document\.(?:cookie|write|writeln|domain|title|evaluate)|location(?:\.(?:href|host|hostname|pathname|search|protocol|assign|replace))?|open|set(?:Timeout|Interval|Immediate)|msSetImmediate|eval|Function|exec(?:Command|Script)|range\.createContextualFragment|crypto\.generateCRMFRequest|WebSocket|(?:element|script)\.(?:href|src|action|text|textContent|innerText|outerText|value|name|target|method|type|backgroundImage|cssText|codebase|srcdoc|search)|postMessage|XMLHttpRequest\.(?:open|send|setRequestHeader)|jQuery\.(?:ajax|globalEval)|[$]\.(?:ajax|globalEval|parseJSON)|FileReader\.readAs(?:ArrayBuffer|BinaryString|DataURL|Text|File)|FileReader\.root\.getFile|sessionStorage\.setItem|localStorage\.setItem|history\.(?:pushState|replaceState)|RegExp|requestFileSystem|executeSql|element\.evaluate)\b.*?(catch\b)?",
+        "Matches": []
+      },
+      "ProxyObjectUsage": {
+        "Regex": "(?<!['\"`][^'`\"]*)\bnew\s+Proxy\b.*?(innerHTML|outerHTML|document\.(?:cookie|write|writeln|domain|title|evaluate)|location(?:\.(?:href|host|hostname|pathname|search|protocol|assign|replace))?|open|set(?:Timeout|Interval|Immediate)|msSetImmediate|eval|Function|exec(?:Command|Script)|range\.createContextualFragment|crypto\.generateCRMFRequest|WebSocket|(?:element|script)\.(?:href|src|action|text|textContent|innerText|outerText|value|name|target|method|type|backgroundImage|cssText|codebase|srcdoc|search)|postMessage|XMLHttpRequest\.(?:open|send|setRequestHeader)|jQuery\.(?:ajax|globalEval)|[$]\.(?:ajax|globalEval|parseJSON)|FileReader\.readAs(?:ArrayBuffer|BinaryString|DataURL|Text|File)|FileReader\.root\.getFile|sessionStorage\.setItem|localStorage\.setItem|history\.(?:pushState|replaceState)|RegExp|requestFileSystem|executeSql|element\.evaluate)\b",
+        "Matches": []
+      },
+      "ModuleImportsExports": {
+        "Regex": "(?<!['\"`][^'`\"]*)\b(export|import)\b.*?(innerHTML|outerHTML|document\.(?:cookie|write|writeln|domain|title|evaluate)|location(?:\.(?:href|host|hostname|pathname|search|protocol|assign|replace))?|open|set(?:Timeout|Interval|Immediate)|msSetImmediate|eval|Function|exec(?:Command|Script)|range\.createContextualFragment|crypto\.generateCRMFRequest|WebSocket|(?:element|script)\.(?:href|src|action|text|textContent|innerText|outerText|value|name|target|method|type|backgroundImage|cssText|codebase|srcdoc|search)|postMessage|XMLHttpRequest\.(?:open|send|setRequestHeader)|jQuery\.(?:ajax|globalEval)|[$]\.(?:ajax|globalEval|parseJSON)|FileReader\.readAs(?:ArrayBuffer|BinaryString|DataURL|Text|File)|FileReader\.root\.getFile|sessionStorage\.setItem|localStorage\.setItem|history\.(?:pushState|replaceState)|RegExp|requestFileSystem|executeSql|element\.evaluate)\b",
+        "Matches": []
+      },
+      "DOMClobbering": {
+        "Regex": null,
+        "Notes": "Requires HTML analysis for element names/IDs (e.g., <form name=\"location\">).",
+        "Matches": []
+      }
+    }
+  }
+}
