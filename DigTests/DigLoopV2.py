@@ -86,7 +86,8 @@ def run_dns_queries(input_file, output_dir):
 
 if __name__ == "__main__":
     # Replace these paths with your actual paths
-    input_file = "iplist.txt"  # File containing list of URLs
-    output_dir = "chariot"  # Directory where results will be saved
+    input_file = "DATAENTERTHIS.txt"  # File containing list of URLs
+    output_dir = "ENTERDATA"  # Directory where results will be saved
     
     run_dns_queries(input_file, output_dir)
+
